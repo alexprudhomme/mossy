@@ -1,0 +1,9 @@
+appId: com.gitpeek.app
+productName: GitPeek
+directories:
+  output: out
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - dmg
+    - dir
