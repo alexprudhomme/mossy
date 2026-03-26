@@ -1,7 +1,12 @@
 {
   "name": "gitpeek",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Lightweight git worktree visualizer — open from CLI, commit, push, close.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexprudhomme/gitpeek.git",
+    "directory": "packages/gitpeek"
+  },
   "scripts": {
     "dev": "electrobun dev",
     "dev:browser": "bun run src/dev-server.ts . & vite --config vite.config.browser.ts",
