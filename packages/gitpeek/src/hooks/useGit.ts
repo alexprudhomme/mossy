@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { FileEntry, GitStatus, BranchInfo, GitResult } from '../types'
+import { rpc } from '../rpc'
+import type { FileEntry, GitStatus, BranchInfo, GitResult } from '../shared/types'
 
 export function useGit() {
   const [status, setStatus] = useState<GitStatus | null>(null)
@@ -7,61 +8,52 @@ export function useGit() {
   const [selectedFile, setSelectedFile] = useState<FileEntry | null>(null)
   const [selectedFileStaged, setSelectedFileStaged] = useState(false)
   const [diff, setDiff] = useState<string>('')
-  const [initialized, setInitialized] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [diffLoading, setDiffLoading] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
       const [newStatus, newBranch] = await Promise.all([
-        window.gitpeek.git.status(),
-        window.gitpeek.git.branchInfo()
+        rpc().request['git:status']({}),
+        rpc().request['git:branchInfo']({})
       ])
       setStatus(newStatus)
       setBranchInfo(newBranch)
     } catch (err) {
       console.error('Failed to refresh status:', err)
+    } finally {
+      setLoading(false)
     }
   }, [])
 
-  // Initialize window ID and load initial data
+  // Initialize on mount
   useEffect(() => {
-    async function init() {
-      try {
-        const id = await window.gitpeek.getWindowId()
-        window.gitpeek.setWindowId(id)
-        setInitialized(true)
-      } catch (err) {
-        console.error('Failed to initialize:', err)
-      }
-    }
-    init()
-  }, [])
-
-  useEffect(() => {
-    if (initialized) {
-      refresh()
-    }
-  }, [initialized, refresh])
+    refresh()
+  }, [refresh])
 
   // Load diff when selected file changes
   useEffect(() => {
-    if (!selectedFile || !initialized) {
+    if (!selectedFile) {
       setDiff('')
       return
     }
     async function loadDiff() {
+      setDiffLoading(true)
       try {
-        const d = await window.gitpeek.git.diff(
-          selectedFile!.path,
-          selectedFileStaged
-        )
+        const d = await rpc().request['git:diff']({
+          filePath: selectedFile!.path,
+          staged: selectedFileStaged
+        })
         setDiff(d)
       } catch (err) {
         console.error('Failed to load diff:', err)
         setDiff('')
+      } finally {
+        setDiffLoading(false)
       }
     }
     loadDiff()
-  }, [selectedFile, selectedFileStaged, initialized])
+  }, [selectedFile, selectedFileStaged])
 
   const selectFile = useCallback((file: FileEntry, staged: boolean) => {
     setSelectedFile(file)
@@ -70,7 +62,7 @@ export function useGit() {
 
   const stageFiles = useCallback(
     async (filePaths: string[]) => {
-      await window.gitpeek.git.stage(filePaths)
+      await rpc().request['git:stage']({ filePaths })
       await refresh()
     },
     [refresh]
@@ -78,7 +70,7 @@ export function useGit() {
 
   const unstageFiles = useCallback(
     async (filePaths: string[]) => {
-      await window.gitpeek.git.unstage(filePaths)
+      await rpc().request['git:unstage']({ filePaths })
       await refresh()
     },
     [refresh]
@@ -86,7 +78,7 @@ export function useGit() {
 
   const commit = useCallback(
     async (summary: string, description?: string): Promise<GitResult> => {
-      const result = await window.gitpeek.git.commit(summary, description)
+      const result = await rpc().request['git:commit']({ summary, description })
       if (result.success) {
         setSelectedFile(null)
         setDiff('')
@@ -98,13 +90,13 @@ export function useGit() {
   )
 
   const push = useCallback(async (): Promise<GitResult> => {
-    const result = await window.gitpeek.git.push()
+    const result = await rpc().request['git:push']({})
     if (result.success) await refresh()
     return result
   }, [refresh])
 
   const pushSetUpstream = useCallback(async (): Promise<GitResult> => {
-    const result = await window.gitpeek.git.pushSetUpstream()
+    const result = await rpc().request['git:pushSetUpstream']({})
     if (result.success) await refresh()
     return result
   }, [refresh])
@@ -113,6 +105,8 @@ export function useGit() {
     status,
     branchInfo,
     diff,
+    loading,
+    diffLoading,
     selectedFile,
     selectedFileStaged,
     refresh,

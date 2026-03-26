@@ -1,11 +1,12 @@
 import React from 'react'
-import { FileEntry } from '../types'
+import { FileEntry } from '../shared/types'
 import { FileListItem } from './FileListItem'
 
 interface FileListProps {
   staged: FileEntry[]
   unstaged: FileEntry[]
   untracked: FileEntry[]
+  loading: boolean
   selectedFile: FileEntry | null
   selectedFileStaged: boolean
   onSelectFile: (file: FileEntry, staged: boolean) => void
@@ -16,12 +17,24 @@ export function FileList({
   staged,
   unstaged,
   untracked,
+  loading,
   selectedFile,
   selectedFileStaged,
   onSelectFile,
   onToggleFile
 }: FileListProps): React.ReactElement {
   const allUnstaged = [...unstaged, ...untracked]
+
+  if (loading) {
+    return (
+      <div className="file-list">
+        <div className="loading-state">
+          <div className="spinner" />
+          <span>Loading changes…</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="file-list">

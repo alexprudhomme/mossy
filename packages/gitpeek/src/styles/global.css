@@ -51,26 +51,42 @@ html, body, #root {
   height: 100%;
 }
 
-/* ── Toolbar ─────────────────────────────────────────── */
+/* ── Title Bar + Toolbar (GitHub Desktop style) ──────── */
 
-.toolbar {
+#desktop-app-title-bar {
+  height: 52px;
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 100%;
+  background: linear-gradient(to bottom, #2b2e33 0%, #1e2228 100%);
+  border-bottom: 1px solid #000;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 52px;
-  padding: 0 16px;
   padding-left: 80px; /* space for macOS traffic lights */
-  background: var(--bg-toolbar);
-  border-bottom: 1px solid var(--border);
-  -webkit-app-region: drag;
-  flex-shrink: 0;
+  padding-right: 16px;
 }
 
-.toolbar-left, .toolbar-right {
+.toolbar-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.toolbar-section {
   display: flex;
   align-items: center;
   gap: 8px;
-  -webkit-app-region: no-drag;
+}
+
+.sidebar-section {
+  flex: 1;
+  min-width: 0;
+}
+
+.push-section {
+  flex-shrink: 0;
 }
 
 .branch-icon {
@@ -81,17 +97,22 @@ html, body, #root {
 .branch-name {
   font-weight: 600;
   font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.sync-status {
+.ahead-behind {
   display: flex;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--text-secondary);
+  background: var(--btn-secondary);
+  height: 16px;
+  border-radius: 8px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  align-items: center;
+  gap: 4px;
 }
-
-.ahead { color: var(--accent-green); }
-.behind { color: var(--diff-del-text); }
 
 .push-btn {
   display: flex;
@@ -394,6 +415,9 @@ html, body, #root {
 }
 
 .diff-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 8px 16px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border);
@@ -404,6 +428,30 @@ html, body, #root {
   font-size: 13px;
   font-family: var(--font-mono);
   color: var(--text-primary);
+}
+
+.diff-stats {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.diff-stat-add {
+  color: var(--diff-add-text);
+}
+
+.diff-stat-del {
+  color: var(--diff-del-text);
+}
+
+.diff-badge {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--btn-secondary);
+  padding: 2px 8px;
+  border-radius: 10px;
 }
 
 .diff-content {
@@ -425,71 +473,130 @@ html, body, #root {
   border-radius: 4px;
 }
 
-/* ── diff2html overrides for dark theme ──────────────── */
+/* ── Diff Table ─────────────────────────────────────── */
 
-.d2h-wrapper {
-  background: var(--bg-primary) !important;
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 20px;
+  table-layout: fixed;
 }
 
-.d2h-file-wrapper {
-  border: none !important;
-  margin: 0 !important;
+.diff-line {
+  border: none;
 }
 
-.d2h-file-header {
-  display: none !important;
+/* Gutter (line numbers) */
+.diff-gutter {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+  padding: 0 8px;
+  text-align: right;
+  color: var(--text-muted);
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  user-select: none;
+  vertical-align: top;
+  font-size: 12px;
 }
 
-.d2h-code-linenumber {
-  background: var(--bg-sidebar) !important;
-  color: var(--text-muted) !important;
-  border-right: 1px solid var(--border) !important;
-  font-family: var(--font-mono) !important;
-  font-size: 12px !important;
+.diff-gutter-added {
+  background: var(--diff-add-bg);
+  color: var(--diff-add-text);
+  opacity: 0.7;
 }
 
-.d2h-code-line {
-  font-family: var(--font-mono) !important;
-  font-size: 13px !important;
-  color: var(--text-primary) !important;
-  padding-left: 12px !important;
+.diff-gutter-removed {
+  background: var(--diff-del-bg);
+  color: var(--diff-del-text);
+  opacity: 0.7;
 }
 
-.d2h-ins {
-  background: var(--diff-add-bg) !important;
+.diff-gutter-hunk {
+  background: #161b2280;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-right: 1px solid var(--border);
 }
 
-.d2h-ins .d2h-code-line-ctn {
-  background: transparent !important;
+/* Code cells */
+.diff-code {
+  padding: 0 0 0 4px;
+  white-space: pre;
+  overflow: hidden;
+  vertical-align: top;
 }
 
-.d2h-del {
-  background: var(--diff-del-bg) !important;
+.diff-code-marker {
+  display: inline-block;
+  width: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  user-select: none;
 }
 
-.d2h-del .d2h-code-line-ctn {
-  background: transparent !important;
+.diff-code-text {
+  white-space: pre;
 }
 
-.d2h-info {
-  background: #161b2280 !important;
-  color: var(--text-secondary) !important;
-  border: none !important;
+.diff-code-added {
+  background: var(--diff-add-bg);
 }
 
-.d2h-code-line-ctn {
-  background: transparent !important;
+.diff-code-added .diff-code-marker {
+  color: var(--diff-add-text);
 }
 
-.d2h-diff-table {
-  font-size: 13px !important;
+.diff-code-removed {
+  background: var(--diff-del-bg);
 }
 
-.d2h-file-diff {
-  overflow: visible !important;
+.diff-code-removed .diff-code-marker {
+  color: var(--diff-del-text);
 }
 
-.d2h-code-side-linenumber {
-  background: var(--bg-sidebar) !important;
-  color: var(--text-muted) !important;
+.diff-code-hunk {
+  background: #161b2280;
+  color: var(--text-secondary);
+  padding: 4px 16px;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Hunk separator row */
+.diff-line-hunk td {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Loading spinner */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.diff-empty .spinner {
+  margin-bottom: 8px;
 }

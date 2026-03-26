@@ -1,18 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { FileEntry } from './types'
-import { useGit } from './hooks/useGit'
-import { useFileWatcher } from './hooks/useFileWatcher'
-import { Toolbar } from './components/Toolbar'
-import { FileList } from './components/FileList'
-import { DiffViewer } from './components/DiffViewer'
-import { CommitBox } from './components/CommitBox'
-import { Notification } from './components/Notification'
+import React, { useState, useCallback } from 'react'
+import { FileEntry } from '../shared/types'
+import { useGit } from '../hooks/useGit'
+import { useFileWatcher } from '../hooks/useFileWatcher'
+import { Toolbar } from './Toolbar'
+import { FileList } from './FileList'
+import { DiffViewer } from './DiffViewer'
+import { CommitBox } from './CommitBox'
+import { Notification } from './Notification'
 
 export default function App(): React.ReactElement {
   const {
     status,
     branchInfo,
     diff,
+    loading,
+    diffLoading,
     selectedFile,
     selectedFileStaged,
     refresh,
@@ -88,6 +90,7 @@ export default function App(): React.ReactElement {
             staged={status?.staged || []}
             unstaged={status?.unstaged || []}
             untracked={status?.untracked || []}
+            loading={loading}
             selectedFile={selectedFile}
             selectedFileStaged={selectedFileStaged}
             onSelectFile={selectFile}
@@ -103,6 +106,7 @@ export default function App(): React.ReactElement {
           <DiffViewer
             diff={diff}
             fileName={selectedFile?.path || null}
+            loading={diffLoading}
           />
         </div>
       </div>

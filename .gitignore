@@ -1,5 +1,12 @@
 node_modules/
 dist/
 out/
+build/
 *.dmg
+*.lockb
+bun.lock
 .DS_Store
+
+packages/gitpeek/artifacts/
+packages/gitpeek/build/
+*.png

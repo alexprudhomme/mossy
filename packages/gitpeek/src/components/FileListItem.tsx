@@ -1,5 +1,5 @@
 import React from 'react'
-import { FileEntry } from '../types'
+import { FileEntry } from '../shared/types'
 
 interface FileListItemProps {
   file: FileEntry
