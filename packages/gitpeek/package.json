@@ -1,6 +1,6 @@
 {
   "name": "gitpeek",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Lightweight git worktree visualizer — open from CLI, commit, push, close.",
   "repository": {
     "type": "git",
