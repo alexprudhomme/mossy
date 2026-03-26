@@ -33,37 +33,14 @@ jobs:
         uses: changesets/action@v1
         with:
           version: pnpm run version-packages
-          publish: pnpm run release
+          publish: pnpm changeset tag
           commit: "chore: version packages"
           title: "chore: version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  github-release:
-    needs: release
-    if: needs.release.outputs.published == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Get version
-        id: version
-        run: echo "version=$(node -p "require('./packages/gitpeek/package.json').version")" >> "$GITHUB_OUTPUT"
-
-      - name: Create GitHub Release
-        run: |
-          gh release create "gitpeek@${{ steps.version.outputs.version }}" \
-            --title "gitpeek v${{ steps.version.outputs.version }}" \
-            --generate-notes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build:
-    needs: [release, github-release]
+    needs: release
     if: needs.release.outputs.published == 'true'
     runs-on: macos-latest
     permissions:
