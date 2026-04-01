@@ -24,10 +24,78 @@ const DEFAULT_CONFIG: AppConfig = {
   issuePanelWidth: 260,
 }
 
+// Mock diffs keyed by file path for realistic testing
+const MOCK_DIFFS: Record<string, string> = {
+  'src/components/App.tsx': [
+    'diff --git a/src/components/App.tsx b/src/components/App.tsx',
+    'index 1a2b3c4..5d6e7f8 100644',
+    '--- a/src/components/App.tsx',
+    '+++ b/src/components/App.tsx',
+    '@@ -12,7 +12,9 @@ export default function App() {',
+    '   const [config, setConfig] = useState<AppConfig | null>(null)',
+    '   const [settingsOpen, setSettingsOpen] = useState(false)',
+    ' ',
+    '-  useEffect(() => {',
+    '+  // Refresh config on mount and when settings change',
+    '+  const refreshConfig = useCallback(async () => {',
+    '+    const cfg = await rpc().request[\'config:get\']()',
+    '+    setConfig(cfg)',
+    '   }, [])',
+    ' ',
+    '   return (',
+  ].join('\n'),
+  'src/styles/global.css': [
+    'diff --git a/src/styles/global.css b/src/styles/global.css',
+    'index aaa1111..bbb2222 100644',
+    '--- a/src/styles/global.css',
+    '+++ b/src/styles/global.css',
+    '@@ -1,5 +1,7 @@',
+    ' @tailwind base;',
+    ' @tailwind components;',
+    ' @tailwind utilities;',
+    '+',
+    '+/* Added new theme variables */',
+    '+--primary: 210 40% 50%;',
+  ].join('\n'),
+  'README.md': [
+    'diff --git a/README.md b/README.md',
+    'index ccc3333..ddd4444 100644',
+    '--- a/README.md',
+    '+++ b/README.md',
+    '@@ -1,4 +1,6 @@',
+    ' # Mossy',
+    ' ',
+    '-A git worktree management dashboard.',
+    '+A git worktree management dashboard built with Electrobun.',
+    '+',
+    '+> Manage all your worktrees from one place.',
+  ].join('\n'),
+  'src/components/NewWidget.tsx': [
+    'diff --git a/src/components/NewWidget.tsx b/src/components/NewWidget.tsx',
+    'new file mode 100644',
+    'index 0000000..eee5555',
+    '--- /dev/null',
+    '+++ b/src/components/NewWidget.tsx',
+    '@@ -0,0 +1,12 @@',
+    '+import { useState } from \'react\'',
+    '+',
+    '+export function NewWidget() {',
+    '+  const [count, setCount] = useState(0)',
+    '+',
+    '+  return (',
+    '+    <div className="p-4">',
+    '+      <h2>Widget</h2>',
+    '+      <button onClick={() => setCount(c => c + 1)}>Count: {count}</button>',
+    '+    </div>',
+    '+  )',
+    '+}',
+  ].join('\n'),
+}
+
 // Stub RPC — returns sensible defaults so the UI can render in a browser
 const stubRpc = new Proxy({}, {
   get: (_target, prop) => {
-    return async (..._args: unknown[]) => {
+    return async (...args: unknown[]) => {
       switch (prop) {
         case 'config:get': return DEFAULT_CONFIG
         case 'config:set': return
@@ -41,11 +109,19 @@ const stubRpc = new Proxy({}, {
         case 'git:defaultBranch': return 'main'
         case 'git:remoteBranches': return []
         case 'git:status': return {
-          staged: [{ path: 'src/components/App.tsx', status: 'M' }],
-          unstaged: [{ path: 'src/styles/global.css', status: 'M' }, { path: 'README.md', status: 'M' }],
-          untracked: [{ path: 'src/components/NewWidget.tsx', status: '?' }],
+          staged: [{ path: 'src/components/App.tsx', status: 'modified' }],
+          unstaged: [{ path: 'src/styles/global.css', status: 'modified' }, { path: 'README.md', status: 'modified' }],
+          untracked: [{ path: 'src/components/NewWidget.tsx', status: 'untracked' }],
         }
-        case 'git:diff': return `--- a/src/styles/global.css\n+++ b/src/styles/global.css\n@@ -1,5 +1,7 @@\n @tailwind base;\n @tailwind components;\n @tailwind utilities;\n+\n+/* Added new theme variables */\n+--primary: 210 40% 50%;\n`
+        case 'git:diff': {
+          const payload = args[0] as { filePath?: string } | undefined
+          const filePath = payload?.filePath ?? ''
+          return MOCK_DIFFS[filePath] ?? ''
+        }
+        case 'git:stage': return
+        case 'git:unstage': return
+        case 'git:commit': return { success: true }
+        case 'git:push': return { success: true }
         case 'git:branchInfo': return { name: 'feature/diff-panel', ahead: 2, behind: 0, hasUpstream: true }
         case 'git:worktreeStatus': return { hasUncommittedChanges: true, unpushedCommits: 2, unpulledCommits: 0, linesAdded: 42, linesDeleted: 7 }
         case 'issues:mine': return []

@@ -9,6 +9,7 @@ export function useWorktreeDiff(worktreePath: string | null) {
   const [diffText, setDiffText] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const diffRequestId = useRef(0)
 
   const refresh = useCallback(async () => {
     if (!worktreePath) {
@@ -29,6 +30,13 @@ export function useWorktreeDiff(worktreePath: string | null) {
     }
   }, [worktreePath])
 
+  // Reset selection when worktree changes
+  useEffect(() => {
+    setSelectedFile(null)
+    setDiffText('')
+    diffRequestId.current++
+  }, [worktreePath])
+
   useEffect(() => {
     refresh()
     if (intervalRef.current) clearInterval(intervalRef.current)
@@ -44,13 +52,21 @@ export function useWorktreeDiff(worktreePath: string | null) {
     if (!worktreePath) return
     setSelectedFile({ path: filePath, staged })
     setLoading(true)
+    const requestId = ++diffRequestId.current
     try {
       const text = await rpc().request['git:diff']({ worktreePath, filePath, staged })
-      setDiffText(text)
+      // Only update if this is still the latest request (prevents race conditions)
+      if (requestId === diffRequestId.current) {
+        setDiffText(text)
+      }
     } catch {
-      setDiffText('')
+      if (requestId === diffRequestId.current) {
+        setDiffText('')
+      }
     } finally {
-      setLoading(false)
+      if (requestId === diffRequestId.current) {
+        setLoading(false)
+      }
     }
   }, [worktreePath])
 
