@@ -92,6 +92,48 @@ const MOCK_DIFFS: Record<string, string> = {
   ].join('\n'),
 }
 
+// Mutable mock git state so staging/unstaging works in browser dev
+interface MockFile { path: string; status: 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked' }
+const mockGitState = {
+  staged: [{ path: 'src/components/App.tsx', status: 'modified' }] as MockFile[],
+  unstaged: [
+    { path: 'src/styles/global.css', status: 'modified' },
+    { path: 'README.md', status: 'modified' },
+  ] as MockFile[],
+  untracked: [{ path: 'src/components/NewWidget.tsx', status: 'untracked' }] as MockFile[],
+}
+
+function mockStage(filePaths: string[]) {
+  for (const fp of filePaths) {
+    // Move from unstaged/untracked → staged
+    let idx = mockGitState.unstaged.findIndex(f => f.path === fp)
+    if (idx !== -1) {
+      const [file] = mockGitState.unstaged.splice(idx, 1)
+      mockGitState.staged.push(file)
+      continue
+    }
+    idx = mockGitState.untracked.findIndex(f => f.path === fp)
+    if (idx !== -1) {
+      const [file] = mockGitState.untracked.splice(idx, 1)
+      mockGitState.staged.push({ ...file, status: 'added' })
+    }
+  }
+}
+
+function mockUnstage(filePaths: string[]) {
+  for (const fp of filePaths) {
+    const idx = mockGitState.staged.findIndex(f => f.path === fp)
+    if (idx !== -1) {
+      const [file] = mockGitState.staged.splice(idx, 1)
+      if (file.status === 'added') {
+        mockGitState.untracked.push({ ...file, status: 'untracked' })
+      } else {
+        mockGitState.unstaged.push(file)
+      }
+    }
+  }
+}
+
 // Stub RPC — returns sensible defaults so the UI can render in a browser
 const stubRpc = new Proxy({}, {
   get: (_target, prop) => {
@@ -109,17 +151,25 @@ const stubRpc = new Proxy({}, {
         case 'git:defaultBranch': return 'main'
         case 'git:remoteBranches': return []
         case 'git:status': return {
-          staged: [{ path: 'src/components/App.tsx', status: 'modified' }],
-          unstaged: [{ path: 'src/styles/global.css', status: 'modified' }, { path: 'README.md', status: 'modified' }],
-          untracked: [{ path: 'src/components/NewWidget.tsx', status: 'untracked' }],
+          staged: [...mockGitState.staged],
+          unstaged: [...mockGitState.unstaged],
+          untracked: [...mockGitState.untracked],
         }
         case 'git:diff': {
           const payload = args[0] as { filePath?: string } | undefined
           const filePath = payload?.filePath ?? ''
           return MOCK_DIFFS[filePath] ?? ''
         }
-        case 'git:stage': return
-        case 'git:unstage': return
+        case 'git:stage': {
+          const payload = args[0] as { filePaths?: string[] } | undefined
+          if (payload?.filePaths) mockStage(payload.filePaths)
+          return
+        }
+        case 'git:unstage': {
+          const payload = args[0] as { filePaths?: string[] } | undefined
+          if (payload?.filePaths) mockUnstage(payload.filePaths)
+          return
+        }
         case 'git:commit': return { success: true }
         case 'git:push': return { success: true }
         case 'git:branchInfo': return { name: 'feature/diff-panel', ahead: 2, behind: 0, hasUpstream: true }
