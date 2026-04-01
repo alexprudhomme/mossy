@@ -1,0 +1,398 @@
+import os from 'node:os'
+import { BrowserWindow, BrowserView, Utils, ApplicationMenu, Updater } from 'electrobun/bun'
+import Electrobun from 'electrobun/bun'
+import { getConfig, setConfig, getCollapsedRepos, setCollapsedRepos } from './services/config'
+import { checkDependencies } from './services/dependencies'
+import {
+  getWorktrees,
+  getGitHubRepo,
+  getDefaultBranch,
+  addWorktree,
+  buildWorktreePath,
+  getRemoteBranches,
+  getWorktreeStatus,
+  removeWorktree,
+  runSetupCommands,
+  pullWorktree,
+  fetchRepo,
+  getGitStatus,
+  getFileDiff,
+  stageFiles,
+  unstageFiles,
+  commitChanges,
+  pushChanges,
+  getBranchInfo
+} from './services/git'
+import { getPRForBranch } from './services/github'
+import { getCurrentIssue, getMyIssues } from './services/issue-dispatcher'
+import { launchIde, launchGhostty, launchURL } from './services/launcher'
+import type { MossyRPC } from '../shared/rpc-types'
+import type { AppConfig, DependencyStatus } from '../shared/types'
+
+const MIN_UPDATE_CHECK_INTERVAL_MIN = 5
+const MAX_UPDATE_CHECK_INTERVAL_MIN = 1440
+const STARTUP_UPDATE_CHECK_DELAY_MS = 15000
+
+let autoUpdateInterval: ReturnType<typeof setInterval> | null = null
+let isUpdateCheckInFlight = false
+let isUpdatePromptOpen = false
+let dependencyStatus: DependencyStatus | null = null
+let dependencyCheckInFlight: Promise<DependencyStatus> | null = null
+
+interface UpdateCheckResult {
+  success: boolean
+  updateAvailable: boolean
+  error?: string
+}
+
+function normalizeUpdateIntervalMin(intervalMin: number): number {
+  return Math.min(Math.max(Math.round(intervalMin), MIN_UPDATE_CHECK_INTERVAL_MIN), MAX_UPDATE_CHECK_INTERVAL_MIN)
+}
+
+function autoUpdateEnabled(config: AppConfig): boolean {
+  return config.autoUpdateEnabled
+}
+
+function configureAutoUpdateSchedule(config: AppConfig): void {
+  if (autoUpdateInterval) {
+    clearInterval(autoUpdateInterval)
+    autoUpdateInterval = null
+  }
+
+  if (!autoUpdateEnabled(config)) return
+
+  const intervalMin = normalizeUpdateIntervalMin(config.updateCheckIntervalMin)
+  autoUpdateInterval = setInterval(() => {
+    void checkForAppUpdate()
+  }, intervalMin * 60_000)
+}
+
+async function promptToRestartForUpdate(): Promise<void> {
+  if (isUpdatePromptOpen) return
+
+  isUpdatePromptOpen = true
+  try {
+    const { response } = await Utils.showMessageBox({
+      type: 'info',
+      title: 'Update ready',
+      message: 'A new version of Mossy is ready to install.',
+      detail: 'Restart now to apply the update.',
+      buttons: ['Restart now', 'Later'],
+      defaultId: 0,
+      cancelId: 1
+    })
+
+    if (response === 0) {
+      await Updater.applyUpdate()
+    }
+  } finally {
+    isUpdatePromptOpen = false
+  }
+}
+
+async function checkForAppUpdate(): Promise<UpdateCheckResult> {
+  if (isUpdateCheckInFlight) {
+    return { success: true, updateAvailable: false }
+  }
+
+  isUpdateCheckInFlight = true
+  try {
+    const info = await Updater.checkForUpdate()
+
+    if (!info.updateAvailable) {
+      return { success: true, updateAvailable: false }
+    }
+
+    await Updater.downloadUpdate()
+    const postDownloadInfo = Updater.updateInfo()
+
+    if (!postDownloadInfo?.updateReady) {
+      return {
+        success: false,
+        updateAvailable: true,
+        error: postDownloadInfo?.error || 'Update download failed'
+      }
+    }
+
+    await promptToRestartForUpdate()
+    return { success: true, updateAvailable: true }
+  } catch {
+    return { success: false, updateAvailable: false, error: 'Failed to check for updates' }
+  } finally {
+    isUpdateCheckInFlight = false
+  }
+}
+
+function startAutoUpdateScheduler(): void {
+  const config = getConfig()
+  configureAutoUpdateSchedule(config)
+
+  setTimeout(() => {
+    if (!autoUpdateEnabled(getConfig())) return
+    void checkForAppUpdate()
+  }, STARTUP_UPDATE_CHECK_DELAY_MS)
+}
+
+async function getDependencyStatus(forceRefresh = false): Promise<DependencyStatus> {
+  if (!forceRefresh && dependencyStatus) return dependencyStatus
+
+  if (!dependencyCheckInFlight) {
+    dependencyCheckInFlight = checkDependencies()
+      .then((status) => {
+        dependencyStatus = status
+        return status
+      })
+      .finally(() => {
+        dependencyCheckInFlight = null
+      })
+  }
+
+  return dependencyCheckInFlight
+}
+
+// --- Main RPC Handlers ---
+
+const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
+  maxRequestTime: 300000,
+  handlers: {
+    requests: {
+      'config:get': () => {
+        return getConfig()
+      },
+      'config:set': ({ config }) => {
+        setConfig(config)
+        configureAutoUpdateSchedule(getConfig())
+      },
+      'config:getCollapsed': () => {
+        return getCollapsedRepos()
+      },
+      'config:setCollapsed': ({ ids }) => {
+        setCollapsedRepos(ids)
+      },
+
+      // Worktree management
+      'git:worktrees': async ({ repoPath }) => {
+        return getWorktrees(repoPath)
+      },
+      'git:defaultBranch': async ({ repoPath }) => {
+        return getDefaultBranch(repoPath)
+      },
+      'git:remoteBranches': async ({ repoPath }) => {
+        return getRemoteBranches(repoPath)
+      },
+      'git:addWorktree': async ({ repoPath, repoName, branch, isNewBranch }) => {
+        const baseBranch = isNewBranch ? await getDefaultBranch(repoPath) : undefined
+        const worktreePath = buildWorktreePath(repoName, branch)
+        const result = await addWorktree(repoPath, branch, worktreePath, isNewBranch, baseBranch)
+        if (!result.success) return result
+        return { ...result, worktreePath }
+      },
+      'git:runSetup': async ({ worktreePath, commands }) => {
+        return runSetupCommands(worktreePath, commands)
+      },
+      'git:worktreeStatus': async ({ worktreePath }) => {
+        return getWorktreeStatus(worktreePath)
+      },
+      'git:fetchRepo': async ({ repoPath }) => {
+        return fetchRepo(repoPath)
+      },
+      'git:pull': async ({ worktreePath }) => {
+        return pullWorktree(worktreePath)
+      },
+      'git:removeWorktree': async ({ repoPath, worktreePath, force }) => {
+        return removeWorktree(repoPath, worktreePath, force)
+      },
+
+      // Diff panel operations
+      'git:status': async ({ worktreePath }) => {
+        return getGitStatus(worktreePath)
+      },
+      'git:diff': async ({ worktreePath, filePath, staged }) => {
+        return getFileDiff(worktreePath, filePath, staged)
+      },
+      'git:stage': async ({ worktreePath, filePaths }) => {
+        return stageFiles(worktreePath, filePaths)
+      },
+      'git:unstage': async ({ worktreePath, filePaths }) => {
+        return unstageFiles(worktreePath, filePaths)
+      },
+      'git:commit': async ({ worktreePath, summary, description }) => {
+        return commitChanges(worktreePath, summary, description)
+      },
+      'git:push': async ({ worktreePath }) => {
+        return pushChanges(worktreePath)
+      },
+      'git:branchInfo': async ({ worktreePath }) => {
+        return getBranchInfo(worktreePath)
+      },
+
+      // Issues
+      'issues:current': async ({ issueKey }) => {
+        return getCurrentIssue(issueKey)
+      },
+      'issues:mine': async () => {
+        return getMyIssues()
+      },
+
+      // GitHub PR
+      'gh:pr': async ({ repoPath, branch }) => {
+        const ghRepo = await getGitHubRepo(repoPath)
+        if (!ghRepo) return null
+        return getPRForBranch(repoPath, branch, ghRepo)
+      },
+
+      // Launcher
+      'launch:ide': async ({ ideId, worktreePath }) => {
+        await launchIde(ideId, worktreePath)
+      },
+      'launch:ghostty': ({ worktreePath }) => {
+        launchGhostty(worktreePath)
+      },
+      'launch:url': async ({ url }) => {
+        if (Utils.openExternal(url)) {
+          return { success: true }
+        }
+        try {
+          await launchURL(url)
+          return { success: true }
+        } catch (err) {
+          return {
+            success: false,
+            error: err instanceof Error ? err.message : String(err)
+          }
+        }
+      },
+
+      // System
+      'system:homedir': () => {
+        return os.homedir()
+      },
+      'dialog:openDirectory': async () => {
+        const paths = await Utils.openFileDialog({
+          startingFolder: os.homedir(),
+          allowedFileTypes: '*',
+          canChooseFiles: false,
+          canChooseDirectory: true,
+          allowsMultipleSelection: false
+        })
+        if (!paths || paths.length === 0) return null
+        return paths[0]
+      },
+      'system:dependencies': async ({ refresh }) => {
+        return getDependencyStatus(Boolean(refresh))
+      },
+
+      // App
+      'app:quit': () => {
+        Utils.quit()
+      },
+      'app:closeWindow': () => {
+        win.close()
+      },
+      'app:checkForUpdates': async () => {
+        return checkForAppUpdate()
+      }
+    },
+    messages: {}
+  }
+})
+
+function openSettingsFromMenu() {
+  try {
+    win.focus()
+    const webviewRpc = win.webview.rpc
+    if (!webviewRpc) return
+    webviewRpc.send['ui:openSettings']()
+  } catch {
+    // Window may not be fully ready yet
+  }
+}
+
+// --- Application Menu ---
+
+ApplicationMenu.setApplicationMenu([
+  {
+    label: 'Mossy',
+    submenu: [
+      { role: 'about' },
+      { type: 'separator' },
+      { label: 'Settings...', action: 'open-settings', accelerator: 'CmdOrCtrl+,' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideOthers' },
+      { role: 'showAll' },
+      { type: 'separator' },
+      { label: 'Quit Mossy', action: 'quit-mossy', accelerator: 'CmdOrCtrl+Q' }
+    ]
+  },
+  {
+    label: 'Edit',
+    submenu: [
+      { role: 'undo' },
+      { role: 'redo' },
+      { type: 'separator' },
+      { role: 'cut' },
+      { role: 'copy' },
+      { role: 'paste' },
+      { role: 'pasteAndMatchStyle' },
+      { role: 'delete' },
+      { role: 'selectAll' }
+    ]
+  },
+  {
+    label: 'Window',
+    submenu: [
+      { role: 'minimize' },
+      { role: 'zoom' },
+      { role: 'close' }
+    ]
+  }
+])
+
+ApplicationMenu.on('application-menu-clicked', (event) => {
+  const payload = event as { action?: string; data?: { action?: string } }
+  const action = payload.data?.action ?? payload.action
+  if (action === 'open-settings') {
+    openSettingsFromMenu()
+    return
+  }
+
+  if (action === 'quit-mossy') {
+    Utils.quit()
+  }
+})
+
+// --- Main Window ---
+
+const win = new BrowserWindow({
+  title: 'Mossy',
+  url: 'views://mainview/index.html',
+  titleBarStyle: 'hiddenInset',
+  frame: {
+    width: 1200,
+    height: 800,
+    x: 200,
+    y: 200
+  },
+  rpc: mainviewRPC
+})
+
+Electrobun.events.on(`new-window-open-${win.webview.id}`, (event: { data?: { detail?: string | { url?: string } } }) => {
+  const detail = event.data?.detail
+  const url = typeof detail === 'string' ? detail : detail?.url
+  if (url) {
+    Utils.openExternal(url)
+  }
+})
+
+startAutoUpdateScheduler()
+void getDependencyStatus()
+
+// --- Shutdown Cleanup ---
+
+process.on('SIGINT', () => {
+  Utils.quit()
+})
+process.on('SIGTERM', () => {
+  Utils.quit()
+})

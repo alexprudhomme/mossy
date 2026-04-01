@@ -1,9 +1,9 @@
 {
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter gitpeek dev",
-    "build": "pnpm --filter gitpeek build",
-    "test": "pnpm --filter gitpeek test",
+    "dev": "pnpm --filter mossy dev",
+    "build": "pnpm --filter mossy build",
+    "test": "pnpm --filter mossy test",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "changeset tag"

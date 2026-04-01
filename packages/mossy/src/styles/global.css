@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* GitHub Dark theme mapped to shadcn variables (HSL without hsl() wrapper) */
+    --background: 215 28% 7%;
+    --foreground: 213 32% 93%;
+
+    --card: 215 22% 11%;
+    --card-foreground: 213 32% 93%;
+
+    --popover: 215 22% 11%;
+    --popover-foreground: 213 32% 93%;
+
+    --primary: 212 100% 67%;
+    --primary-foreground: 215 28% 7%;
+
+    --secondary: 216 18% 13%;
+    --secondary-foreground: 213 32% 93%;
+
+    --muted: 215 17% 15%;
+    --muted-foreground: 213 9% 58%;
+
+    --accent: 216 18% 13%;
+    --accent-foreground: 213 32% 93%;
+
+    --destructive: 2 92% 63%;
+    --destructive-foreground: 213 32% 93%;
+
+    --success: 130 52% 49%;
+    --success-foreground: 215 28% 7%;
+
+    --warning: 40 74% 48%;
+    --warning-foreground: 215 28% 7%;
+
+    --border: 213 12% 21%;
+    --input: 213 12% 21%;
+    --ring: 212 100% 67%;
+
+    --radius: 0.5rem;
+
+    /* Diff-specific colors (used directly, not through hsl()) */
+    --diff-added-bg: rgba(63, 185, 80, 0.15);
+    --diff-removed-bg: rgba(248, 81, 73, 0.15);
+    --diff-added-text: #3fb950;
+    --diff-removed-text: #f85149;
+    --diff-hunk-bg: rgba(56, 139, 253, 0.1);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+      sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+.titlebar-drag {
+  -webkit-app-region: drag;
+}
+
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}

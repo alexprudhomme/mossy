@@ -1,0 +1,41 @@
+{
+  "name": "mossy",
+  "version": "0.0.0",
+  "description": "Git worktree management dashboard with inline diff viewer.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexprudhomme/gitpeek.git",
+    "directory": "packages/mossy"
+  },
+  "scripts": {
+    "dev": "electrobun dev",
+    "dev:browser": "bun run src/dev-server.ts . & vite --config vite.config.browser.ts",
+    "build": "electrobun build --env=stable",
+    "test": "bun test",
+    "start:packaged": "open build/stable-macos-arm64/Mossy.app"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@tabler/icons-react": "^3.31.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "electrobun": "^1.14.4",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "tailwind-merge": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "autoprefixer": "^10.4.27",
+    "bun-types": "^1.2.0",
+    "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.7.0",
+    "vite": "^5.4.0"
+  },
+  "packageManager": "bun@1.3.11"
+}

@@ -10,3 +10,4 @@ bun.lock
 packages/gitpeek/artifacts/
 packages/gitpeek/build/
 *.png
+.playwright-mcp/
