@@ -39,6 +39,7 @@ const stubRpc = new Proxy({}, {
         case 'git:worktreeStatus': return { hasUncommittedChanges: false, unpushedCommits: 0, unpulledCommits: 0, linesAdded: 0, linesDeleted: 0 }
         case 'issues:mine': return []
         case 'system:homedir': return '/Users/dev'
+        case 'dialog:openDirectory': return prompt('Enter folder path:') || null
         case 'system:dependencies': return { checkedAt: new Date().toISOString(), checks: [] }
         case 'app:checkForUpdates': return { success: true, updateAvailable: false }
         default: return null

@@ -126,10 +126,26 @@ export function SettingsModal({
 
   async function handleBrowseBasePath() {
     try {
-      const result = await rpc().request['system:selectDirectory']({})
+      const result = await rpc().request['dialog:openDirectory']({})
       if (result) {
         setBasePathInput(result)
         await setWorktreeBasePath(result)
+      }
+    } catch {
+      // Dialog cancelled or unavailable
+    }
+  }
+
+  async function handleBrowseRepoPath() {
+    try {
+      const result = await rpc().request['dialog:openDirectory']({})
+      if (result) {
+        setNewRepoPath(result)
+        // Auto-fill name from folder name if empty
+        if (!newRepoName.trim()) {
+          const folderName = result.split('/').filter(Boolean).pop() || ''
+          setNewRepoName(folderName)
+        }
       }
     } catch {
       // Dialog cancelled or unavailable
@@ -373,14 +389,24 @@ function GeneralSection({
           </div>
           <div className="flex-1">
             <FieldLabel>Path</FieldLabel>
-            <input
-              type="text"
-              placeholder="/path/to/repo"
-              value={newRepoPath}
-              onChange={(e) => setNewRepoPath(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') onAddRepo() }}
-              className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+            <div className="flex gap-1.5">
+              <input
+                type="text"
+                placeholder="/path/to/repo"
+                value={newRepoPath}
+                onChange={(e) => setNewRepoPath(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') onAddRepo() }}
+                className="flex-1 min-w-0 bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={handleBrowseRepoPath}
+                title="Browse for folder"
+                className="px-2.5 py-2 rounded-md text-sm border border-input bg-secondary text-secondary-foreground hover:bg-accent transition-colors shrink-0"
+              >
+                <IconFolder size={14} />
+              </button>
+            </div>
           </div>
           <button
             className="px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 shrink-0"
