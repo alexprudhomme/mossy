@@ -11,18 +11,22 @@ export default {
   },
   build: {
     mac: {
-      icons: 'AppIcon.iconset'
+      icons: 'AppIcon.iconset',
+      bundleCEF: false
+    },
+    linux: {
+      bundleCEF: false
+    },
+    win: {
+      bundleCEF: false
     },
     bun: {
       entrypoint: 'src/bun/index.ts'
     },
-    views: {
-      mainview: {
-        entrypoint: 'src/mainview/index.tsx'
-      }
-    },
     copy: {
-      'src/mainview/index.html': 'views/mainview/index.html'
-    }
+      'dist/index.html': 'views/mainview/index.html',
+      'dist/assets': 'views/mainview/assets'
+    },
+    watchIgnore: ['dist/**']
   }
 } satisfies ElectrobunConfig
