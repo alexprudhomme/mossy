@@ -107,7 +107,7 @@ export function SettingsModal({
   async function checkDependencies() {
     setCheckingDeps(true)
     try {
-      const status = await rpc().request['system:checkDependencies']({})
+      const status = await rpc().request['system:dependencies']({ refresh: true })
       setDepStatus(status)
       onDependencyStatusChange?.(status)
     } catch {
