@@ -364,6 +364,10 @@ export async function pushChanges(worktreePath: string): Promise<GitResult> {
   }
 }
 
+// Throttled fetch per branch to keep tracking refs fresh
+const branchFetchTimestamps = new Map<string, number>()
+const BRANCH_FETCH_THROTTLE_MS = 30_000
+
 export async function getBranchInfo(worktreePath: string): Promise<BranchInfo> {
   try {
     const branchOut = await git(['rev-parse', '--abbrev-ref', 'HEAD'], worktreePath)
@@ -371,6 +375,15 @@ export async function getBranchInfo(worktreePath: string): Promise<BranchInfo> {
     let ahead = 0
     let behind = 0
     let hasUpstream = false
+
+    // Throttled fetch so tracking refs stay reasonably fresh (max once per 30s per branch)
+    const now = Date.now()
+    const key = `${worktreePath}:${name}`
+    const lastFetch = branchFetchTimestamps.get(key) || 0
+    if (now - lastFetch > BRANCH_FETCH_THROTTLE_MS) {
+      await gitSilent(['fetch', 'origin', name, '--quiet'], worktreePath)
+      branchFetchTimestamps.set(key, now)
+    }
 
     const trackingOut = await gitSilent(['rev-parse', '--abbrev-ref', '@{u}'], worktreePath)
     if (trackingOut && trackingOut.trim()) {
@@ -380,6 +393,20 @@ export async function getBranchInfo(worktreePath: string): Promise<BranchInfo> {
         const [behindStr, aheadStr] = countOut.trim().split('\t')
         behind = parseInt(behindStr) || 0
         ahead = parseInt(aheadStr) || 0
+      }
+    } else {
+      // No tracking configured — check if branch already exists on the remote
+      const remoteBranch = await gitSilent(['rev-parse', '--verify', `origin/${name}`], worktreePath)
+      if (remoteBranch && remoteBranch.trim()) {
+        // Auto-set tracking so future checks are accurate
+        await gitSilent(['branch', '--set-upstream-to', `origin/${name}`, name], worktreePath)
+        hasUpstream = true
+        const countOut = await gitSilent(['rev-list', '--left-right', '--count', `origin/${name}...HEAD`], worktreePath)
+        if (countOut) {
+          const [behindStr, aheadStr] = countOut.trim().split('\t')
+          behind = parseInt(behindStr) || 0
+          ahead = parseInt(aheadStr) || 0
+        }
       }
     }
 
