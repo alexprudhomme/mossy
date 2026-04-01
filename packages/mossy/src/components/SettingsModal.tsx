@@ -233,6 +233,7 @@ export function SettingsModal({
               basePathInput={basePathInput}
               setBasePathInput={setBasePathInput}
               onBrowseBasePath={handleBrowseBasePath}
+              onBrowseRepoPath={handleBrowseRepoPath}
               onSaveBasePath={handleSaveBasePath}
               onSetIssueTracker={setIssueTracker}
               onSetPollInterval={setPollInterval}
@@ -296,6 +297,7 @@ interface GeneralSectionProps {
   basePathInput: string
   setBasePathInput: (v: string) => void
   onBrowseBasePath: () => void
+  onBrowseRepoPath: () => void
   onSaveBasePath: () => void
   onSetIssueTracker: (tracker: IssueTracker) => Promise<void>
   onSetPollInterval: (sec: number) => Promise<void>
@@ -318,6 +320,7 @@ function GeneralSection({
   basePathInput,
   setBasePathInput,
   onBrowseBasePath,
+  onBrowseRepoPath,
   onSaveBasePath,
   onSetIssueTracker,
   onSetPollInterval,
@@ -400,7 +403,7 @@ function GeneralSection({
               />
               <button
                 type="button"
-                onClick={handleBrowseRepoPath}
+                onClick={onBrowseRepoPath}
                 title="Browse for folder"
                 className="px-2.5 py-2 rounded-md text-sm border border-input bg-secondary text-secondary-foreground hover:bg-accent transition-colors shrink-0"
               >
