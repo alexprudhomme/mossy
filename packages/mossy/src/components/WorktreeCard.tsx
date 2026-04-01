@@ -65,21 +65,19 @@ export function WorktreeCard({
   }, [deleting])
 
   return (
-    <div className="flex flex-col">
-      <div
-        className={cn(
-          'rounded-lg border p-4 transition-all duration-150',
-          deleting
-            ? 'border-border/50 bg-card/50 opacity-45 pointer-events-none'
-            : hovered
-              ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
-              : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
-          expanded && !deleting && 'rounded-b-none border-b-0'
-        )}
-        onDoubleClick={handleDoubleClick}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-      >
+    <div
+      className={cn(
+        'flex flex-col rounded-lg border overflow-hidden transition-all duration-150',
+        deleting
+          ? 'border-border/50 bg-card/50 opacity-45 pointer-events-none'
+          : hovered
+            ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
+            : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
+      )}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div className="p-4" onDoubleClick={handleDoubleClick}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <button
@@ -143,9 +141,9 @@ export function WorktreeCard({
         </div>
       </div>
 
-      {/* Expandable diff panel */}
+      {/* Expandable diff panel — seamless continuation of the card */}
       {expanded && !deleting && (
-        <div className="border border-t-0 border-primary/20 rounded-b-lg bg-background overflow-hidden">
+        <div className="border-t border-border/50">
           <DiffPanel worktreePath={worktree.path} />
         </div>
       )}

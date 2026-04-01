@@ -459,36 +459,40 @@ export function DiffPanel({ worktreePath, className }: DiffPanelProps) {
   const staged = gitStatus?.staged ?? []
   const unstaged_ = gitStatus?.unstaged ?? []
   const untracked = gitStatus?.untracked ?? []
+  const totalChanges = staged.length + unstaged_.length + untracked.length
 
   return (
-    <div
-      className={cn(
-        'relative flex h-[400px] flex-col overflow-hidden rounded-lg border border-border bg-background',
-        className,
-      )}
-    >
+    <div className={cn('relative flex flex-col', className)}>
       {toast && <Notification toast={toast} onDismiss={() => setToast(null)} />}
 
       <Toolbar branchInfo={branchInfo} onPush={handlePush} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <FileList
-          staged={staged}
-          unstaged={unstaged_}
-          untracked={untracked}
-          selectedFile={selectedFile}
-          onSelectFile={handleSelectFile}
-          onStage={handleStage}
-          onUnstage={handleUnstage}
-        />
-        <DiffViewer diffText={diffText} loading={loading} />
-      </div>
+      {totalChanges === 0 && !loading ? (
+        <div className="flex items-center justify-center py-6 text-xs text-muted-foreground">
+          No changes
+        </div>
+      ) : (
+        <>
+          <div className="flex overflow-hidden" style={{ height: 320 }}>
+            <FileList
+              staged={staged}
+              unstaged={unstaged_}
+              untracked={untracked}
+              selectedFile={selectedFile}
+              onSelectFile={handleSelectFile}
+              onStage={handleStage}
+              onUnstage={handleUnstage}
+            />
+            <DiffViewer diffText={diffText} loading={loading} />
+          </div>
 
-      <CommitBox
-        branchName={branchInfo?.name ?? 'main'}
-        hasStaged={staged.length > 0}
-        onCommit={handleCommit}
-      />
+          <CommitBox
+            branchName={branchInfo?.name ?? 'main'}
+            hasStaged={staged.length > 0}
+            onCommit={handleCommit}
+          />
+        </>
+      )}
     </div>
   )
 }

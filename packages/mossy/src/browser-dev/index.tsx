@@ -9,7 +9,9 @@ import '../styles/global.css'
 import type { AppConfig } from '../shared/types'
 
 const DEFAULT_CONFIG: AppConfig = {
-  repositories: [],
+  repositories: [
+    { id: 'demo-1', name: 'gitpeek', path: '/Users/alexprudhomme/dev/gitpeek' },
+  ],
   worktreeBasePath: '~/Developer/worktrees',
   issueTracker: 'none',
   pollIntervalSec: 60,
@@ -31,12 +33,21 @@ const stubRpc = new Proxy({}, {
         case 'config:set': return
         case 'config:getCollapsed': return []
         case 'config:setCollapsed': return
-        case 'git:worktrees': return []
+        case 'git:worktrees': return [
+          { branch: 'main', path: '/Users/dev/gitpeek', isMainWorktree: true },
+          { branch: 'feature/diff-panel', path: '/Users/dev/worktrees/gitpeek/feature-diff-panel', isMainWorktree: false },
+          { branch: 'fix/styling-bugs', path: '/Users/dev/worktrees/gitpeek/fix-styling-bugs', isMainWorktree: false },
+        ]
         case 'git:defaultBranch': return 'main'
         case 'git:remoteBranches': return []
-        case 'git:status': return { staged: [], unstaged: [], untracked: [] }
-        case 'git:branchInfo': return { name: 'main', ahead: 0, behind: 0, hasUpstream: true }
-        case 'git:worktreeStatus': return { hasUncommittedChanges: false, unpushedCommits: 0, unpulledCommits: 0, linesAdded: 0, linesDeleted: 0 }
+        case 'git:status': return {
+          staged: [{ path: 'src/components/App.tsx', status: 'M' }],
+          unstaged: [{ path: 'src/styles/global.css', status: 'M' }, { path: 'README.md', status: 'M' }],
+          untracked: [{ path: 'src/components/NewWidget.tsx', status: '?' }],
+        }
+        case 'git:diff': return `--- a/src/styles/global.css\n+++ b/src/styles/global.css\n@@ -1,5 +1,7 @@\n @tailwind base;\n @tailwind components;\n @tailwind utilities;\n+\n+/* Added new theme variables */\n+--primary: 210 40% 50%;\n`
+        case 'git:branchInfo': return { name: 'feature/diff-panel', ahead: 2, behind: 0, hasUpstream: true }
+        case 'git:worktreeStatus': return { hasUncommittedChanges: true, unpushedCommits: 2, unpulledCommits: 0, linesAdded: 42, linesDeleted: 7 }
         case 'issues:mine': return []
         case 'system:homedir': return '/Users/dev'
         case 'dialog:openDirectory': return prompt('Enter folder path:') || null
