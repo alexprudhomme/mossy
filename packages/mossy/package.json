@@ -9,8 +9,9 @@
   },
   "scripts": {
     "start": "vite build && electrobun dev",
-    "dev": "electrobun dev --watch",
-    "dev:hmr": "concurrently \"bun run hmr\" \"bun run start\"",
+    "dev": "vite build && electrobun dev",
+    "dev:watch": "electrobun dev --watch",
+    "dev:hmr": "concurrently --kill-others \"bun run hmr\" \"bun run start\"",
     "hmr": "vite --port 5173",
     "dev:browser": "vite --config vite.config.browser.ts",
     "build": "vite build && electrobun build --env=stable",
