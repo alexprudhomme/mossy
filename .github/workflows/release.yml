@@ -39,7 +39,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build:
+  build-mac:
+    name: Build macOS
     needs: release
     if: needs.release.outputs.published == 'true'
     runs-on: macos-latest
@@ -52,7 +53,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          ref: "gitpeek@${{ steps.version.outputs.version }}"
+          ref: "mossy@${{ steps.version.outputs.version }}"
 
       - uses: pnpm/action-setup@v4
 
@@ -67,14 +68,46 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build
-        run: pnpm --filter gitpeek build
+      - name: Build and package
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          ELECTROBUN_DEVELOPER_ID: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+        working-directory: packages/mossy
+        run: |
+          if [ -n "$MACOS_CERTIFICATE" ]; then
+            KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+            KEYCHAIN_PWD=$(openssl rand -base64 32)
+            security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+            for cert in AppleWWDRCAG3 AppleWWDRCAG6 AppleWWDRCAG7; do
+              curl -fsSL "https://www.apple.com/certificateauthority/${cert}.cer" \
+                | security import /dev/stdin -k "$KEYCHAIN_PATH" 2>/dev/null || true
+            done
+            echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+            security import "$RUNNER_TEMP/certificate.p12" -k "$KEYCHAIN_PATH" -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+            security list-keychain -d user -s "$KEYCHAIN_PATH"
+            security default-keychain -s "$KEYCHAIN_PATH"
+            security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          fi
+          pnpm run build
 
-      - name: Upload artifacts to GitHub Release
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mossy-mac
+          path: |
+            packages/mossy/artifacts/*.dmg
+            packages/mossy/artifacts/*.tar.zst
+            packages/mossy/artifacts/*-update.json
+          retention-days: 30
+
+      - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "gitpeek@${{ steps.version.outputs.version }}"
+          tag_name: "mossy@${{ steps.version.outputs.version }}"
           files: |
-            packages/gitpeek/build/**/*.dmg
-            packages/gitpeek/build/**/*.tar.zst
-            packages/gitpeek/build/**/*.json
+            packages/mossy/artifacts/*.dmg
+            packages/mossy/artifacts/*.tar.zst
+            packages/mossy/artifacts/*-update.json
