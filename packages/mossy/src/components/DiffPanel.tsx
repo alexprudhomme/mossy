@@ -59,9 +59,7 @@ function Toolbar({
   branchInfo: { name: string; ahead: number; behind: number; hasUpstream: boolean } | null
   onPush: () => void
 }) {
-  if (!branchInfo) return null
-
-  const showPush = branchInfo.ahead > 0 || !branchInfo.hasUpstream
+  const showPush = branchInfo && (branchInfo.ahead > 0 || !branchInfo.hasUpstream)
 
   return (
     <div className="flex items-center justify-between border-b border-border bg-card px-3 py-2">
@@ -69,8 +67,8 @@ function Toolbar({
         <svg className="h-3.5 w-3.5 text-muted-foreground" viewBox="0 0 16 16" fill="currentColor">
           <path d="M11.75 2.5a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-1.5 0V4.56L7.78 7.78a.75.75 0 0 1-1.06-1.06L9.94 3.5H8.25a.75.75 0 0 1 0-1.5h3.5ZM4 4a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm0 5.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7ZM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm0 5.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
         </svg>
-        <span className="font-medium text-foreground">{branchInfo.name}</span>
-        {branchInfo.hasUpstream && (branchInfo.ahead > 0 || branchInfo.behind > 0) && (
+        <span className="font-medium text-foreground">{branchInfo?.name ?? '…'}</span>
+        {branchInfo?.hasUpstream && (branchInfo.ahead > 0 || branchInfo.behind > 0) && (
           <span className="text-muted-foreground">
             {branchInfo.ahead > 0 && <span>↑{branchInfo.ahead}</span>}
             {branchInfo.behind > 0 && <span className="ml-1">↓{branchInfo.behind}</span>}
@@ -467,9 +465,13 @@ export function DiffPanel({ worktreePath, className }: DiffPanelProps) {
 
       <Toolbar branchInfo={branchInfo} onPush={handlePush} />
 
-      {totalChanges === 0 && !loading ? (
+      {totalChanges === 0 && !loading && gitStatus !== null ? (
         <div className="flex items-center justify-center py-6 text-xs text-muted-foreground">
           No changes
+        </div>
+      ) : totalChanges === 0 && !gitStatus ? (
+        <div className="flex items-center justify-center py-6 text-xs text-muted-foreground">
+          <span className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
         </div>
       ) : (
         <>
