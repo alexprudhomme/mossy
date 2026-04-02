@@ -1,5 +1,11 @@
 # mossy
 
+## 0.2.1
+
+### Patch Changes
+
+- 081530f: Fix merge queue indicator by using GraphQL API to detect merge queue status instead of the unreliable `mergeStateStatus` field from `gh pr view`.
+
 ## 0.2.0
 
 ### Minor Changes
