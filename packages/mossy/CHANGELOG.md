@@ -1,5 +1,11 @@
 # mossy
 
+## 0.1.2
+
+### Patch Changes
+
+- 7b5c945: Disable macOS code signing for unsigned .dmg builds. Users can force-open the app via System Settings.
+
 ## 0.1.1
 
 ### Patch Changes
