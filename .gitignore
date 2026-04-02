@@ -7,7 +7,7 @@ build/
 bun.lock
 .DS_Store
 
-packages/gitpeek/artifacts/
-packages/gitpeek/build/
+packages/mossy/artifacts/
+packages/mossy/build/
 *.png
 .playwright-mcp/

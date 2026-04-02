@@ -268,7 +268,7 @@ export async function runSetupCommands(
   return { results, allSucceeded: true }
 }
 
-// --- Diff panel operations (adapted from gitpeek, using Bun.spawn) ---
+// --- Diff panel operations (using Bun.spawn) ---
 
 function mapStatusCode(code: string): FileEntry['status'] {
   switch (code) {

@@ -10,7 +10,7 @@ import type { AppConfig } from '../shared/types'
 
 const DEFAULT_CONFIG: AppConfig = {
   repositories: [
-    { id: 'demo-1', name: 'gitpeek', path: '/Users/alexprudhomme/dev/gitpeek' },
+    { id: 'demo-1', name: 'mossy', path: '/Users/alexprudhomme/dev/mossy' },
   ],
   worktreeBasePath: '~/Developer/worktrees',
   issueTracker: 'none',
@@ -144,9 +144,9 @@ const stubRpc = new Proxy({}, {
         case 'config:getCollapsed': return []
         case 'config:setCollapsed': return
         case 'git:worktrees': return [
-          { branch: 'main', path: '/Users/dev/gitpeek', isMainWorktree: true },
-          { branch: 'feature/diff-panel', path: '/Users/dev/worktrees/gitpeek/feature-diff-panel', isMainWorktree: false },
-          { branch: 'fix/styling-bugs', path: '/Users/dev/worktrees/gitpeek/fix-styling-bugs', isMainWorktree: false },
+          { branch: 'main', path: '/Users/dev/mossy', isMainWorktree: true },
+          { branch: 'feature/diff-panel', path: '/Users/dev/worktrees/mossy/feature-diff-panel', isMainWorktree: false },
+          { branch: 'fix/styling-bugs', path: '/Users/dev/worktrees/mossy/fix-styling-bugs', isMainWorktree: false },
         ]
         case 'git:defaultBranch': return 'main'
         case 'git:remoteBranches': return []

@@ -80,7 +80,7 @@ export interface DependencyStatus {
   checks: DependencyCheck[]
 }
 
-// Diff panel types (from gitpeek)
+// Diff panel types
 export interface FileEntry {
   path: string
   status: 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked'
