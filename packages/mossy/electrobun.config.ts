@@ -13,7 +13,7 @@ export default {
     mac: {
       icons: 'AppIcon.iconset',
       bundleCEF: false,
-      codesign: true
+      codesign: false
     },
     linux: {
       bundleCEF: false
