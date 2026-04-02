@@ -556,8 +556,21 @@ function UpdatesSection({
   checkingUpdates: boolean
   updateResult: string | null
 }) {
+  const [appVersion, setAppVersion] = useState<string | null>(null)
+
+  useEffect(() => {
+    rpc().request['app:version']({}).then(setAppVersion).catch(() => {})
+  }, [])
+
   return (
     <div className="flex flex-col gap-5">
+      {appVersion && (
+        <div>
+          <SectionHeading>Version</SectionHeading>
+          <span className="text-sm text-muted-foreground">Mossy v{appVersion}</span>
+        </div>
+      )}
+
       <div>
         <SectionHeading>Automatic Updates</SectionHeading>
         <label className="flex items-center gap-2 cursor-pointer">

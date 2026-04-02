@@ -165,6 +165,10 @@ export type MossyRPC = {
         params: Record<string, never>
         response: void
       }
+      'app:version': {
+        params: Record<string, never>
+        response: string
+      }
       'app:checkForUpdates': {
         params: Record<string, never>
         response: { success: boolean; updateAvailable: boolean; error?: string }

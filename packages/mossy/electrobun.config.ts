@@ -1,10 +1,11 @@
 import type { ElectrobunConfig } from 'electrobun'
+import pkg from './package.json'
 
 export default {
   app: {
     name: 'Mossy',
     identifier: 'com.mossy.app',
-    version: '1.0.0'
+    version: pkg.version
   },
   runtime: {
     exitOnLastWindowClosed: true

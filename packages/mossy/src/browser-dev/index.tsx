@@ -180,6 +180,7 @@ const stubRpc = new Proxy({}, {
         case 'system:homedir': return '/Users/dev'
         case 'dialog:openDirectory': return prompt('Enter folder path:') || null
         case 'system:dependencies': return { checkedAt: new Date().toISOString(), checks: [] }
+        case 'app:version': return '0.0.0-dev'
         case 'app:checkForUpdates': return { success: true, updateAvailable: false }
         default: return null
       }
