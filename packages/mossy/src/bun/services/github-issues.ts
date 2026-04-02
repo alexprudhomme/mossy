@@ -1,5 +1,4 @@
 import { getShellEnv } from './shell-env'
-import { getConfig } from './config'
 import { getGitHubRepo } from './git'
 import type { Issue } from '../../shared/types'
 
@@ -20,59 +19,31 @@ async function gh(args: string[], cwd?: string, timeout = 15000): Promise<string
   return stdout
 }
 
+/** Fetch all open issues assigned to the current user across ALL GitHub repos. */
 export async function getMyGitHubIssues(): Promise<Issue[]> {
-  const config = getConfig()
-  const repos = config.repositories ?? []
-  if (repos.length === 0) return []
+  try {
+    const stdout = await gh([
+      'search', 'issues',
+      '--assignee=@me',
+      '--state=open',
+      '--json', 'number,title,state,labels,url,assignees,repository',
+      '--limit', '100'
+    ])
 
-  // Resolve GitHub slugs for all configured repos
-  const slugs: string[] = []
-  for (const repo of repos) {
-    try {
-      const slug = await getGitHubRepo(repo.path)
-      if (slug) slugs.push(slug)
-    } catch { /* skip repos without GitHub remote */ }
+    const data = JSON.parse(stdout)
+    if (!Array.isArray(data)) return []
+
+    return data.map((item: any) => mapGitHubIssue(item))
+  } catch {
+    return []
   }
-
-  if (slugs.length === 0) return []
-
-  // Fetch issues from all repos in parallel, deduplicate by URL
-  const results = await Promise.allSettled(
-    slugs.map(async (slug) => {
-      const stdout = await gh([
-        'issue', 'list',
-        '--assignee', '@me',
-        '--state', 'open',
-        '--json', 'number,title,state,labels,url,assignees',
-        '--limit', '50',
-        '-R', slug
-      ])
-      const data = JSON.parse(stdout)
-      if (!Array.isArray(data)) return []
-      return data.map((item: any) => mapGitHubIssue(item))
-    })
-  )
-
-  const seen = new Set<string>()
-  const issues: Issue[] = []
-  for (const result of results) {
-    if (result.status !== 'fulfilled') continue
-    for (const issue of result.value) {
-      if (!seen.has(issue.url)) {
-        seen.add(issue.url)
-        issues.push(issue)
-      }
-    }
-  }
-
-  return issues
 }
 
 export async function getGitHubIssue(issueNumber: string, repoPath?: string): Promise<Issue | null> {
   try {
     const num = issueNumber.replace(/^#/, '')
 
-    // If we have a repo path, resolve its GitHub slug for -R
+    // Resolve GitHub slug for -R flag
     let repoFlag: string[] = []
     if (repoPath) {
       const slug = await getGitHubRepo(repoPath)
@@ -93,10 +64,12 @@ export async function getGitHubIssue(issueNumber: string, repoPath?: string): Pr
 }
 
 function mapGitHubIssue(item: any): Issue {
+  const repo = item.repository?.nameWithOwner
+  const key = repo ? `${repo}#${item.number}` : `#${item.number}`
   return {
-    key: `#${item.number}`,
+    key,
     summary: item.title || '',
-    status: item.state === 'OPEN' ? 'Open' : item.state || 'Unknown',
+    status: item.state === 'OPEN' || item.state === 'open' ? 'Open' : item.state || 'Unknown',
     assignee: item.assignees?.[0]?.login || null,
     issueType: mapLabelsToType(item.labels),
     url: item.url || ''
