@@ -4,7 +4,7 @@
   "description": "Git worktree management dashboard with inline diff viewer.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/alexprudhomme/gitpeek.git",
+    "url": "https://github.com/alexprudhomme/mossy.git",
     "directory": "packages/mossy"
   },
   "scripts": {

@@ -1,4 +1,4 @@
-# Copilot Instructions for gitpeek/mossy
+# Copilot Instructions for mossy
 
 ## PR Workflow (mandatory)
 
