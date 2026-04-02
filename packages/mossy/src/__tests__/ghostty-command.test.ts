@@ -80,27 +80,34 @@ describe('ghosttyCommand config', () => {
 })
 
 describe('launchGhostty args construction', () => {
-  // Test the argument construction logic directly
   function buildGhosttyArgs(worktreePath: string, command?: string): string[] {
-    return command
-      ? ['open', '-a', 'Ghostty.app', '--args', `--working-directory=${worktreePath}`, '-e', command]
-      : ['open', '-a', 'Ghostty.app', worktreePath]
+    const args = ['open', '-n', '-a', 'Ghostty.app', '--args', `--working-directory=${worktreePath}`]
+    if (command) {
+      args.push('-e', command)
+    }
+    return args
   }
 
-  test('builds default args without command', () => {
+  test('builds args without command — opens default shell in worktree dir', () => {
     const args = buildGhosttyArgs('/path/to/worktree')
-    expect(args).toEqual(['open', '-a', 'Ghostty.app', '/path/to/worktree'])
+    expect(args).toEqual([
+      'open', '-n', '-a', 'Ghostty.app', '--args',
+      '--working-directory=/path/to/worktree'
+    ])
   })
 
-  test('builds default args when command is undefined', () => {
+  test('builds args when command is undefined', () => {
     const args = buildGhosttyArgs('/path/to/worktree', undefined)
-    expect(args).toEqual(['open', '-a', 'Ghostty.app', '/path/to/worktree'])
+    expect(args).toEqual([
+      'open', '-n', '-a', 'Ghostty.app', '--args',
+      '--working-directory=/path/to/worktree'
+    ])
   })
 
   test('builds args with command', () => {
     const args = buildGhosttyArgs('/path/to/worktree', 'copilot')
     expect(args).toEqual([
-      'open', '-a', 'Ghostty.app', '--args',
+      'open', '-n', '-a', 'Ghostty.app', '--args',
       '--working-directory=/path/to/worktree', '-e', 'copilot'
     ])
   })
@@ -108,8 +115,16 @@ describe('launchGhostty args construction', () => {
   test('builds args with claude command', () => {
     const args = buildGhosttyArgs('/Users/dev/worktrees/mossy/my-branch', 'claude')
     expect(args).toEqual([
-      'open', '-a', 'Ghostty.app', '--args',
+      'open', '-n', '-a', 'Ghostty.app', '--args',
       '--working-directory=/Users/dev/worktrees/mossy/my-branch', '-e', 'claude'
+    ])
+  })
+
+  test('empty string command is treated as no command', () => {
+    const args = buildGhosttyArgs('/path/to/worktree', '')
+    expect(args).toEqual([
+      'open', '-n', '-a', 'Ghostty.app', '--args',
+      '--working-directory=/path/to/worktree'
     ])
   })
 })
