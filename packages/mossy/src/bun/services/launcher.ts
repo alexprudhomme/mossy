@@ -11,15 +11,21 @@ export async function launchIde(ideId: IdeId, worktreePath: string): Promise<voi
 
 export async function launchGhostty(worktreePath: string, command?: string): Promise<void> {
   const env = await getShellEnv()
-  const args = ['open', '-n', '-a', 'Ghostty.app', '--args', `--working-directory=${worktreePath}`]
   if (command) {
-    args.push('-e', command)
+    // macOS ignores --args for already-running apps, so -n is needed to
+    // guarantee the flags reach Ghostty. This opens a new window.
+    Bun.spawn(
+      ['open', '-n', '-a', 'Ghostty.app', '--args', `--working-directory=${worktreePath}`, '-e', command],
+      { stdout: 'ignore', stderr: 'ignore', env }
+    )
+  } else {
+    // Pass the directory as a file arg. Ghostty opens a new tab in the
+    // directory when it's already running, or a new window if it isn't.
+    Bun.spawn(
+      ['open', '-a', 'Ghostty.app', worktreePath],
+      { stdout: 'ignore', stderr: 'ignore', env }
+    )
   }
-  Bun.spawn(args, {
-    stdout: 'ignore',
-    stderr: 'ignore',
-    env
-  })
 }
 
 export async function launchURL(url: string): Promise<void> {
