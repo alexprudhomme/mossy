@@ -25,7 +25,7 @@ export async function getPRForBranch(
     const stdout = await gh(
       [
         'pr', 'view', branch,
-        '--json', 'number,url,title,state,isDraft,reviewDecision,statusCheckRollup',
+        '--json', 'number,url,title,body,state,isDraft,reviewDecision,statusCheckRollup',
         '-R', ghRepo
       ],
       repoPath
@@ -37,6 +37,7 @@ export async function getPRForBranch(
       number: data.number,
       url: data.url,
       title: data.title,
+      body: data.body ?? null,
       state: data.state as PRInfo['state'],
       isDraft: data.isDraft ?? false,
       reviewDecision: data.reviewDecision ?? null,

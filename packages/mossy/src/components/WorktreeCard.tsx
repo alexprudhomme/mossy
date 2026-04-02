@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { IconGitBranch, IconTrash, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
 import { cn } from '../lib/utils'
 import { IssueBadge } from './IssueBadge'
@@ -30,14 +30,28 @@ interface WorktreeCardProps {
 
 const JIRA_KEY_REGEX = /([a-zA-Z][a-zA-Z0-9]+-\d+)/i
 const GH_ISSUE_REGEX = /(?:^|[/-])(\d+)(?:[/-]|$)/
+const GH_ISSUE_BODY_REGEX = /#(\d+)/
 
-function extractIssueKey(branch: string, tracker: IssueTracker): string | null {
+function extractIssueKeyFromBranch(branch: string, tracker: IssueTracker): string | null {
   if (tracker === 'jira') {
     const match = branch.match(JIRA_KEY_REGEX)
     return match ? match[1].toUpperCase() : null
   }
   if (tracker === 'github') {
     const match = branch.match(GH_ISSUE_REGEX)
+    return match ? match[1] : null
+  }
+  return null
+}
+
+function extractIssueKeyFromPRBody(body: string | null | undefined, tracker: IssueTracker): string | null {
+  if (!body) return null
+  if (tracker === 'jira') {
+    const match = body.match(JIRA_KEY_REGEX)
+    return match ? match[1].toUpperCase() : null
+  }
+  if (tracker === 'github') {
+    const match = body.match(GH_ISSUE_BODY_REGEX)
     return match ? match[1] : null
   }
   return null
@@ -51,9 +65,17 @@ export function WorktreeCard({
   const [hovered, setHovered] = useState(false)
   const [expanded, setExpanded] = useState(false)
 
-  const issueKey = extractIssueKey(worktree.branch, issueTracker)
-  const { issue, loading: issueLoading } = useIssue(issueKey, pollIntervalSec, refreshKey, repoPath)
   const { pr, loading: prLoading } = usePR(repoPath, worktree.isMain ? null : worktree.branch, pollIntervalSec, refreshKey)
+
+  // Prefer issue key from PR description; fall back to branch name when no PR exists
+  const issueKey = useMemo(() => {
+    if (worktree.isMain) return extractIssueKeyFromBranch(worktree.branch, issueTracker)
+    if (prLoading) return null
+    if (pr) return extractIssueKeyFromPRBody(pr.body, issueTracker)
+    return extractIssueKeyFromBranch(worktree.branch, issueTracker)
+  }, [pr, prLoading, worktree.branch, worktree.isMain, issueTracker])
+
+  const { issue, loading: issueLoading } = useIssue(issueKey, pollIntervalSec, refreshKey, repoPath)
   const { status: wtStatus, loading: wtStatusLoading, refresh: refreshStatus } = useWorktreeStatus(worktree.path, pollIntervalSec, refreshKey)
   const { conflicts, loading: conflictsLoading } = useMergeConflicts(worktree.path, repoPath, worktree.isMain, pollIntervalSec, refreshKey)
   const { shortenPath } = useHomedir()

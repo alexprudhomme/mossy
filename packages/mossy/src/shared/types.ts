@@ -44,6 +44,7 @@ export interface PRInfo {
   number: number
   url: string
   title: string
+  body: string | null
   state: 'OPEN' | 'CLOSED' | 'MERGED'
   isDraft: boolean
   reviewDecision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null
