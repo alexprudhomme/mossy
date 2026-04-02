@@ -16,6 +16,25 @@ async function gh(args: string[], cwd: string, timeout = 15000): Promise<string>
   return stdout
 }
 
+async function getMergeQueueStatus(
+  repoPath: string,
+  ghRepo: string,
+  prNumber: number
+): Promise<boolean> {
+  try {
+    const [owner, name] = ghRepo.split('/')
+    const query = `query($owner:String!,$name:String!,$pr:Int!){repository(owner:$owner,name:$name){pullRequest(number:$pr){mergeQueueEntry{id}}}}`
+    const stdout = await gh(
+      ['api', 'graphql', '-f', `query=${query}`, '-F', `owner=${owner}`, '-F', `name=${name}`, '-F', `pr=${prNumber}`],
+      repoPath
+    )
+    const result = JSON.parse(stdout)
+    return result?.data?.repository?.pullRequest?.mergeQueueEntry != null
+  } catch {
+    return false
+  }
+}
+
 export async function getPRForBranch(
   repoPath: string,
   branch: string,
@@ -25,14 +44,17 @@ export async function getPRForBranch(
     const stdout = await gh(
       [
         'pr', 'view', branch,
-        '--json', 'number,url,title,body,state,isDraft,reviewDecision,statusCheckRollup,mergeStateStatus',
+        '--json', 'number,url,title,body,state,isDraft,reviewDecision,statusCheckRollup',
         '-R', ghRepo
       ],
       repoPath
     )
 
     const data = JSON.parse(stdout)
-    const ci = mapCIStatus(data.statusCheckRollup)
+    const [ci, isInMergeQueue] = await Promise.all([
+      Promise.resolve(mapCIStatus(data.statusCheckRollup)),
+      getMergeQueueStatus(repoPath, ghRepo, data.number)
+    ])
     return {
       number: data.number,
       url: data.url,
@@ -40,7 +62,7 @@ export async function getPRForBranch(
       body: data.body ?? null,
       state: data.state as PRInfo['state'],
       isDraft: data.isDraft ?? false,
-      isInMergeQueue: data.mergeStateStatus === 'QUEUED',
+      isInMergeQueue,
       reviewDecision: data.reviewDecision ?? null,
       ...ci
     }
