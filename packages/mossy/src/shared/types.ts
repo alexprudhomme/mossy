@@ -47,6 +47,7 @@ export interface PRInfo {
   body: string | null
   state: 'OPEN' | 'CLOSED' | 'MERGED'
   isDraft: boolean
+  isInMergeQueue: boolean
   reviewDecision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null
   ciStatus: 'SUCCESS' | 'FAILURE' | 'PENDING' | null
   ciFailed: number

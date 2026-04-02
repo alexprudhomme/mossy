@@ -1,4 +1,4 @@
-import { IconCircleCheck, IconCircleX, IconClock, IconGitPullRequest, IconUserCheck, IconAlertTriangle } from '@tabler/icons-react'
+import { IconCircleCheck, IconCircleX, IconClock, IconGitMerge, IconGitPullRequest, IconUserCheck, IconAlertTriangle } from '@tabler/icons-react'
 import { cn } from '../lib/utils'
 import type { PRInfo } from '../shared/types'
 
@@ -22,7 +22,8 @@ const CI_COLORS: Record<string, string> = {
 const STATE_COLORS: Record<string, string> = {
   OPEN: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
   CLOSED: 'bg-pink-500/15 text-pink-400 border-pink-500/30',
-  MERGED: 'bg-violet-500/15 text-violet-400 border-violet-500/30'
+  MERGED: 'bg-violet-500/15 text-violet-400 border-violet-500/30',
+  MERGE_QUEUE: 'bg-amber-500/15 text-amber-400 border-amber-500/30'
 }
 
 const REVIEW_CONFIG: Record<string, { label: string; icon: React.ReactNode; colors: string }> = {
@@ -61,18 +62,22 @@ export function PRBadge({ pr, loading }: PRBadgeProps) {
     )
   }
 
+  const displayState = pr.isInMergeQueue ? 'MERGE_QUEUE' : pr.state
+  const stateLabel = pr.isInMergeQueue ? 'merge queue' : pr.state.toLowerCase()
+  const StateIcon = pr.isInMergeQueue ? IconGitMerge : IconGitPullRequest
+
   return (
     <div className="flex items-center gap-1">
       <button
         onClick={() => window.open(pr.url, '_blank')}
-        title={`${pr.title}${pr.isDraft ? ' (Draft)' : ''}`}
+        title={`${pr.title}${pr.isDraft ? ' (Draft)' : ''}${pr.isInMergeQueue ? ' (Merge Queue)' : ''}`}
         className={cn(
           'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border cursor-pointer hover:brightness-125 transition-all',
-          STATE_COLORS[pr.state]
+          STATE_COLORS[displayState]
         )}
       >
-        <IconGitPullRequest size={12} />
-        #{pr.number} {pr.state.toLowerCase()}
+        <StateIcon size={12} />
+        #{pr.number} {stateLabel}
         {pr.isDraft ? ' (draft)' : ''}
       </button>
 
