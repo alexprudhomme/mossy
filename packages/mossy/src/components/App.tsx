@@ -28,7 +28,7 @@ export default function App() {
   const {
     config, loading,
     addRepo, removeRepo, setPollInterval, setAutoUpdateEnabled,
-    setUpdateCheckInterval, reorderRepos, setDefaultIde,
+    setUpdateCheckInterval, reorderRepos, setDefaultIde, setGhosttyCommand,
     setRepoSetupCommands, setIssuePanelOpen, setIssuePanelWidth,
     setWorktreeBasePath, setIssueTracker, setFetchInterval
   } = useConfig()
@@ -242,6 +242,7 @@ export default function App() {
         setAutoUpdateEnabled={setAutoUpdateEnabled}
         setUpdateCheckInterval={setUpdateCheckInterval}
         setDefaultIde={setDefaultIde}
+        setGhosttyCommand={setGhosttyCommand}
         setRepoSetupCommands={setRepoSetupCommands}
         setWorktreeBasePath={setWorktreeBasePath}
         setIssueTracker={setIssueTracker}

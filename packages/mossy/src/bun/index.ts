@@ -246,7 +246,8 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
         await launchIde(ideId, worktreePath)
       },
       'launch:ghostty': ({ worktreePath }) => {
-        launchGhostty(worktreePath)
+        const { ghosttyCommand } = getConfig()
+        launchGhostty(worktreePath, ghosttyCommand || undefined)
       },
       'launch:url': async ({ url }) => {
         if (Utils.openExternal(url)) {

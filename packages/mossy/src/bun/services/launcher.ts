@@ -9,9 +9,12 @@ export async function launchIde(ideId: IdeId, worktreePath: string): Promise<voi
   await proc.exited
 }
 
-export async function launchGhostty(worktreePath: string): Promise<void> {
+export async function launchGhostty(worktreePath: string, command?: string): Promise<void> {
   const env = await getShellEnv()
-  Bun.spawn(['open', '-a', 'Ghostty.app', worktreePath], {
+  const args = command
+    ? ['open', '-a', 'Ghostty.app', '--args', `--working-directory=${worktreePath}`, '-e', command]
+    : ['open', '-a', 'Ghostty.app', worktreePath]
+  Bun.spawn(args, {
     stdout: 'ignore',
     stderr: 'ignore',
     env

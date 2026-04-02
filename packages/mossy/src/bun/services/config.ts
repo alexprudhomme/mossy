@@ -28,6 +28,7 @@ const DEFAULTS: AppConfig = {
   updateCheckIntervalMin: 30,
   collapsedRepos: [],
   defaultIde: 'vscode',
+  ghosttyCommand: '',
   issuePanelOpen: false,
   issuePanelWidth: 260
 }
@@ -65,6 +66,7 @@ function sanitizeConfig(config: Partial<AppConfig>): AppConfig {
     updateCheckIntervalMin,
     collapsedRepos: Array.isArray(config.collapsedRepos) ? [...config.collapsedRepos] : [],
     defaultIde: isValidIdeId(config.defaultIde) ? config.defaultIde : DEFAULTS.defaultIde,
+    ghosttyCommand: typeof config.ghosttyCommand === 'string' ? config.ghosttyCommand.trim() : DEFAULTS.ghosttyCommand,
     issuePanelOpen: typeof config.issuePanelOpen === 'boolean' ? config.issuePanelOpen : DEFAULTS.issuePanelOpen,
     issuePanelWidth: typeof config.issuePanelWidth === 'number'
       ? clamp(Math.round(config.issuePanelWidth), MIN_ISSUE_PANEL_WIDTH, MAX_ISSUE_PANEL_WIDTH)

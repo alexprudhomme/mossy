@@ -40,6 +40,7 @@ interface SettingsModalProps {
   setAutoUpdateEnabled: (enabled: boolean) => Promise<void>
   setUpdateCheckInterval: (minutes: number) => Promise<void>
   setDefaultIde: (ide: IdeId) => Promise<void>
+  setGhosttyCommand: (command: string) => Promise<void>
   setRepoSetupCommands: (repoId: string, commands: string[]) => Promise<void>
   setIssueTracker: (tracker: IssueTracker) => Promise<void>
   setWorktreeBasePath: (path: string) => Promise<void>
@@ -70,6 +71,7 @@ export function SettingsModal({
   setAutoUpdateEnabled,
   setUpdateCheckInterval,
   setDefaultIde,
+  setGhosttyCommand,
   setRepoSetupCommands,
   setIssueTracker,
   setWorktreeBasePath,
@@ -242,7 +244,7 @@ export function SettingsModal({
           )}
 
           {section === 'editor' && (
-            <EditorSection config={config} onSetDefaultIde={setDefaultIde} />
+            <EditorSection config={config} onSetDefaultIde={setDefaultIde} onSetGhosttyCommand={setGhosttyCommand} />
           )}
 
           {section === 'updates' && (
@@ -503,10 +505,18 @@ function GeneralSection({
 function EditorSection({
   config,
   onSetDefaultIde,
+  onSetGhosttyCommand,
 }: {
   config: AppConfig
   onSetDefaultIde: (ide: IdeId) => Promise<void>
+  onSetGhosttyCommand: (command: string) => Promise<void>
 }) {
+  const [ghosttyDraft, setGhosttyDraft] = useState(config.ghosttyCommand)
+
+  useEffect(() => {
+    setGhosttyDraft(config.ghosttyCommand)
+  }, [config.ghosttyCommand])
+
   return (
     <div>
       <SectionHeading>Default Editor</SectionHeading>
@@ -532,6 +542,31 @@ function EditorSection({
             </button>
           )
         })}
+      </div>
+
+      <div className="mt-6">
+        <SectionHeading>Ghostty Command</SectionHeading>
+        <p className="text-xs text-[#484f58] mb-3">
+          Command to run when opening Ghostty (e.g. <code className="text-[#7ee787]">copilot</code>, <code className="text-[#7ee787]">claude</code>). Leave empty for a default shell.
+        </p>
+        <input
+          type="text"
+          value={ghosttyDraft}
+          onChange={(e) => setGhosttyDraft(e.target.value)}
+          onBlur={() => {
+            const trimmed = ghosttyDraft.trim()
+            if (trimmed !== config.ghosttyCommand) {
+              onSetGhosttyCommand(trimmed)
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.currentTarget.blur()
+            }
+          }}
+          placeholder="None (default shell)"
+          className="w-full px-3 py-2 rounded-md bg-secondary text-sm text-foreground placeholder:text-[#484f58] border border-transparent focus:border-primary focus:outline-none"
+        />
       </div>
     </div>
   )

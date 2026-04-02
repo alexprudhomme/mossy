@@ -84,6 +84,14 @@ export function useConfig() {
     [config, save]
   )
 
+  const setGhosttyCommand = useCallback(
+    async (command: string) => {
+      if (!config) return
+      await save({ ...config, ghosttyCommand: command })
+    },
+    [config, save]
+  )
+
   const setRepoSetupCommands = useCallback(
     async (repoId: string, commands: string[]) => {
       if (!config) return
@@ -149,6 +157,7 @@ export function useConfig() {
     setUpdateCheckInterval,
     reorderRepos,
     setDefaultIde,
+    setGhosttyCommand,
     setRepoSetupCommands,
     setIssuePanelOpen,
     setIssuePanelWidth,

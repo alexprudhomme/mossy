@@ -20,6 +20,7 @@ export interface AppConfig {
   updateCheckIntervalMin: number
   collapsedRepos: string[]
   defaultIde: IdeId
+  ghosttyCommand: string
   issuePanelOpen: boolean
   issuePanelWidth: number
 }
