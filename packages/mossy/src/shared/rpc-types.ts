@@ -109,7 +109,7 @@ export type MossyRPC = {
 
       // Issues (polymorphic based on config)
       'issues:current': {
-        params: { issueKey: string }
+        params: { issueKey: string; repoPath?: string }
         response: Issue | null
       }
       'issues:mine': {

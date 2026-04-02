@@ -50,7 +50,7 @@ export function WorktreeCard({
   const [expanded, setExpanded] = useState(false)
 
   const issueKey = extractIssueKey(worktree.branch, issueTracker)
-  const { issue, loading: issueLoading } = useIssue(issueKey, pollIntervalSec, refreshKey)
+  const { issue, loading: issueLoading } = useIssue(issueKey, pollIntervalSec, refreshKey, repoPath)
   const { pr, loading: prLoading } = usePR(repoPath, worktree.isMain ? null : worktree.branch, pollIntervalSec, refreshKey)
   const { status: wtStatus, loading: wtStatusLoading, refresh: refreshStatus } = useWorktreeStatus(worktree.path, pollIntervalSec, refreshKey)
   const { shortenPath } = useHomedir()

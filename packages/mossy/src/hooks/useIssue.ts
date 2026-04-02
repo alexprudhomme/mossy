@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { rpc } from '../rpc'
 import type { Issue } from '../shared/types'
 
-export function useIssue(issueKey: string | null, pollIntervalSec: number, refreshKey?: number) {
+export function useIssue(issueKey: string | null, pollIntervalSec: number, refreshKey?: number, repoPath?: string) {
   const [issue, setIssue] = useState<Issue | null>(null)
   const [loading, setLoading] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -14,14 +14,14 @@ export function useIssue(issueKey: string | null, pollIntervalSec: number, refre
     }
     setLoading(true)
     try {
-      const result = await rpc().request['issues:current']({ issueKey })
+      const result = await rpc().request['issues:current']({ issueKey, repoPath })
       setIssue(result)
     } catch {
       setIssue(null)
     } finally {
       setLoading(false)
     }
-  }, [issueKey, refreshKey])
+  }, [issueKey, refreshKey, repoPath])
 
   useEffect(() => {
     fetch()

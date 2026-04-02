@@ -227,8 +227,8 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
       },
 
       // Issues
-      'issues:current': async ({ issueKey }) => {
-        return getCurrentIssue(issueKey)
+      'issues:current': async ({ issueKey, repoPath }) => {
+        return getCurrentIssue(issueKey, repoPath)
       },
       'issues:mine': async () => {
         return getMyIssues()
