@@ -21,7 +21,8 @@ import {
   unstageFiles,
   commitChanges,
   pushChanges,
-  getBranchInfo
+  getBranchInfo,
+  getMergeConflicts
 } from './services/git'
 import { getPRForBranch } from './services/github'
 import { getCurrentIssue, getMyIssues } from './services/issue-dispatcher'
@@ -224,6 +225,9 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
       },
       'git:branchInfo': async ({ worktreePath }) => {
         return getBranchInfo(worktreePath)
+      },
+      'git:mergeConflicts': async ({ worktreePath, repoPath }) => {
+        return getMergeConflicts(worktreePath, repoPath)
       },
 
       // Issues

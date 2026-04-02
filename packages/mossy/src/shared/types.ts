@@ -47,6 +47,7 @@ export interface PRInfo {
   body: string | null
   state: 'OPEN' | 'CLOSED' | 'MERGED'
   isDraft: boolean
+  reviewDecision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED' | null
   ciStatus: 'SUCCESS' | 'FAILURE' | 'PENDING' | null
   ciFailed: number
   ciTotal: number
@@ -104,4 +105,11 @@ export interface BranchInfo {
 export interface GitResult {
   success: boolean
   error?: string
+}
+
+export interface MergeConflictInfo {
+  hasConflicts: boolean
+  conflictCount: number
+  conflictFiles: string[]
+  targetBranch: string
 }

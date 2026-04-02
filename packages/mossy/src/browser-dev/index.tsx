@@ -174,6 +174,8 @@ const stubRpc = new Proxy({}, {
         case 'git:push': return { success: true }
         case 'git:branchInfo': return { name: 'feature/diff-panel', ahead: 2, behind: 0, hasUpstream: true }
         case 'git:worktreeStatus': return { hasUncommittedChanges: true, unpushedCommits: 2, unpulledCommits: 0, linesAdded: 42, linesDeleted: 7 }
+        case 'git:mergeConflicts': return { hasConflicts: true, conflictCount: 2, conflictFiles: ['src/components/App.tsx', 'package.json'], targetBranch: 'main' }
+        case 'gh:pr': return { number: 42, url: 'https://github.com/example/mossy/pull/42', title: 'feat: example PR', state: 'OPEN', isDraft: false, reviewDecision: 'APPROVED', ciStatus: 'SUCCESS', ciFailed: 0, ciTotal: 3 }
         case 'issues:mine': return []
         case 'system:homedir': return '/Users/dev'
         case 'dialog:openDirectory': return prompt('Enter folder path:') || null
