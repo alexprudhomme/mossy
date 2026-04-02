@@ -55,11 +55,6 @@ export function WorktreeCard({
   const { status: wtStatus, loading: wtStatusLoading, refresh: refreshStatus } = useWorktreeStatus(worktree.path, pollIntervalSec, refreshKey)
   const { shortenPath } = useHomedir()
 
-  const handleDoubleClick = () => {
-    if (deleting) return
-    rpc().request['launch:ide']({ ideId: defaultIde, worktreePath: worktree.path })
-  }
-
   const toggleExpand = useCallback(() => {
     if (!deleting) setExpanded((prev) => !prev)
   }, [deleting])
@@ -77,7 +72,7 @@ export function WorktreeCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="p-4" onDoubleClick={handleDoubleClick}>
+      <div className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <button
