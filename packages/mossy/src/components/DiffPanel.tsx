@@ -30,16 +30,25 @@ interface Toast {
 }
 
 function Notification({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
+  const [fading, setFading] = useState(false)
+
   useEffect(() => {
-    const t = setTimeout(onDismiss, 3000)
-    return () => clearTimeout(t)
+    setFading(false)
+    const fadeTimer = setTimeout(() => setFading(true), 800)
+    const removeTimer = setTimeout(onDismiss, 1100)
+    return () => {
+      clearTimeout(fadeTimer)
+      clearTimeout(removeTimer)
+    }
   }, [toast, onDismiss])
 
   return (
     <div
       className={cn(
-        'absolute top-2 right-2 z-50 flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs shadow-lg',
+        'absolute top-2 right-2 z-50 flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs shadow-lg pointer-events-none',
         'border-border bg-card text-foreground',
+        'transition-opacity duration-300',
+        fading ? 'opacity-0' : 'opacity-100',
       )}
     >
       <span className={toast.type === 'success' ? 'text-emerald-400' : 'text-red-400'}>
