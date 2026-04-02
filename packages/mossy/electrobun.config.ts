@@ -12,7 +12,8 @@ export default {
   build: {
     mac: {
       icons: 'AppIcon.iconset',
-      bundleCEF: false
+      bundleCEF: false,
+      codesign: true
     },
     linux: {
       bundleCEF: false
@@ -28,5 +29,8 @@ export default {
       'dist/assets': 'views/mainview/assets'
     },
     watchIgnore: ['dist/**']
+  },
+  release: {
+    baseUrl: 'https://github.com/alexprudhomme/gitpeek/releases/latest/download'
   }
 } satisfies ElectrobunConfig
