@@ -104,3 +104,10 @@ export interface GitResult {
   success: boolean
   error?: string
 }
+
+export interface MergeConflictInfo {
+  hasConflicts: boolean
+  conflictCount: number
+  conflictFiles: string[]
+  targetBranch: string
+}

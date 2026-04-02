@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { getShellEnv } from './shell-env'
 import { getConfig } from './config'
-import type { Worktree, WorktreeStatus, SetupCommandResult, GitStatus, FileEntry, BranchInfo, GitResult } from '../../shared/types'
+import type { Worktree, WorktreeStatus, SetupCommandResult, GitStatus, FileEntry, BranchInfo, GitResult, MergeConflictInfo } from '../../shared/types'
 
 const MAIN_BRANCH_NAMES = new Set(['main', 'master', 'develop', 'trunk'])
 
@@ -413,5 +413,73 @@ export async function getBranchInfo(worktreePath: string): Promise<BranchInfo> {
     return { name, ahead, behind, hasUpstream }
   } catch {
     return { name: 'unknown', ahead: 0, behind: 0, hasUpstream: false }
+  }
+}
+
+// --- Merge conflict detection ---
+
+const MERGE_CONFLICT_THROTTLE_MS = 60_000
+const mergeConflictCache = new Map<string, { result: MergeConflictInfo; timestamp: number }>()
+
+export async function getMergeConflicts(
+  worktreePath: string,
+  repoPath: string
+): Promise<MergeConflictInfo> {
+  const defaultBranch = await getDefaultBranch(repoPath)
+  const noConflicts: MergeConflictInfo = { hasConflicts: false, conflictCount: 0, conflictFiles: [], targetBranch: defaultBranch }
+
+  try {
+    // Check if current branch IS the default branch — skip detection
+    const branchOut = await gitSilent(['rev-parse', '--abbrev-ref', 'HEAD'], worktreePath)
+    if (branchOut && branchOut.trim() === defaultBranch) return noConflicts
+
+    const targetRef = `origin/${defaultBranch}`
+
+    // Verify the target ref exists
+    const targetExists = await gitSilent(['rev-parse', '--verify', targetRef], worktreePath)
+    if (!targetExists) return noConflicts
+
+    // Throttle: reuse cached result if still fresh
+    const cacheKey = `${worktreePath}:${targetRef}`
+    const cached = mergeConflictCache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < MERGE_CONFLICT_THROTTLE_MS) {
+      return cached.result
+    }
+
+    // Use git merge-tree to perform a virtual merge (no working tree changes)
+    const env = await getShellEnv()
+    const proc = Bun.spawn(
+      ['git', 'merge-tree', '--write-tree', 'HEAD', targetRef],
+      { cwd: worktreePath, stdout: 'pipe', stderr: 'pipe', env }
+    )
+    const stdout = await new Response(proc.stdout).text()
+    const exitCode = await proc.exited
+
+    if (exitCode === 0) {
+      mergeConflictCache.set(cacheKey, { result: noConflicts, timestamp: Date.now() })
+      return noConflicts
+    }
+
+    // Parse CONFLICT lines — e.g. "CONFLICT (content): Merge conflict in <path>"
+    const conflictFiles = stdout
+      .split('\n')
+      .filter(line => line.startsWith('CONFLICT'))
+      .map(line => {
+        const match = line.match(/Merge conflict in (.+)$/)
+        return match ? match[1] : null
+      })
+      .filter((f): f is string => f !== null)
+
+    const result: MergeConflictInfo = {
+      hasConflicts: conflictFiles.length > 0,
+      conflictCount: conflictFiles.length,
+      conflictFiles,
+      targetBranch: defaultBranch
+    }
+
+    mergeConflictCache.set(cacheKey, { result, timestamp: Date.now() })
+    return result
+  } catch {
+    return noConflicts
   }
 }
