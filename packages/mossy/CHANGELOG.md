@@ -1,5 +1,11 @@
 # mossy
 
+## 0.2.2
+
+### Patch Changes
+
+- 1f7d83a: Fix update check by syncing electrobun.config version with package.json, and display the current app version in the Updates settings section.
+
 ## 0.2.1
 
 ### Patch Changes
