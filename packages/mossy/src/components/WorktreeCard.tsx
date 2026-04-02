@@ -3,6 +3,7 @@ import { IconGitBranch, IconTrash, IconChevronDown, IconChevronRight } from '@ta
 import { cn } from '../lib/utils'
 import { IssueBadge } from './IssueBadge'
 import { PRBadge } from './PRBadge'
+import { ConflictsBadge } from './ConflictsBadge'
 import { DirtyBadge } from './DirtyBadge'
 import { LaunchButtons } from './LaunchButtons'
 import { DeleteWorktreeModal } from './DeleteWorktreeModal'
@@ -10,6 +11,7 @@ import { DiffPanel } from './DiffPanel'
 import { useIssue } from '../hooks/useIssue'
 import { usePR } from '../hooks/usePR'
 import { useWorktreeStatus } from '../hooks/useWorktreeStatus'
+import { useMergeConflicts } from '../hooks/useMergeConflicts'
 import { useHomedir } from '../hooks/useHomedir'
 import { rpc } from '../rpc'
 import type { IdeId, IssueTracker, Worktree } from '../shared/types'
@@ -53,6 +55,7 @@ export function WorktreeCard({
   const { issue, loading: issueLoading } = useIssue(issueKey, pollIntervalSec, refreshKey, repoPath)
   const { pr, loading: prLoading } = usePR(repoPath, worktree.isMain ? null : worktree.branch, pollIntervalSec, refreshKey)
   const { status: wtStatus, loading: wtStatusLoading, refresh: refreshStatus } = useWorktreeStatus(worktree.path, pollIntervalSec, refreshKey)
+  const { conflicts, loading: conflictsLoading } = useMergeConflicts(worktree.path, repoPath, worktree.isMain, pollIntervalSec, refreshKey)
   const { shortenPath } = useHomedir()
 
   const handleDoubleClick = () => {
@@ -121,6 +124,7 @@ export function WorktreeCard({
                 )}
                 <IssueBadge issueKey={issueKey} issue={issue} loading={issueLoading} issueTracker={issueTracker} />
                 <PRBadge pr={pr} loading={prLoading} />
+                <ConflictsBadge conflicts={conflicts} loading={conflictsLoading} />
                 <DirtyBadge status={wtStatus} loading={wtStatusLoading} worktreePath={worktree.path} onPullComplete={refreshStatus} />
               </div>
 

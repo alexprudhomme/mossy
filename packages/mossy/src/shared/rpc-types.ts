@@ -7,6 +7,7 @@ import type {
   GitStatus,
   IdeId,
   Issue,
+  MergeConflictInfo,
   PRInfo,
   SetupCommandResult,
   Worktree,
@@ -105,6 +106,10 @@ export type MossyRPC = {
       'git:branchInfo': {
         params: { worktreePath: string }
         response: BranchInfo
+      }
+      'git:mergeConflicts': {
+        params: { worktreePath: string; repoPath: string }
+        response: MergeConflictInfo
       }
 
       // Issues (polymorphic based on config)
