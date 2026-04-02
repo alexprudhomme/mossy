@@ -31,16 +31,18 @@ interface Toast {
 
 function Notification({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
   const [fading, setFading] = useState(false)
+  const onDismissRef = useRef(onDismiss)
+  onDismissRef.current = onDismiss
 
   useEffect(() => {
     setFading(false)
     const fadeTimer = setTimeout(() => setFading(true), 800)
-    const removeTimer = setTimeout(onDismiss, 1100)
+    const removeTimer = setTimeout(() => onDismissRef.current(), 1100)
     return () => {
       clearTimeout(fadeTimer)
       clearTimeout(removeTimer)
     }
-  }, [toast, onDismiss])
+  }, [toast])
 
   return (
     <div
