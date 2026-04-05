@@ -181,7 +181,13 @@ export function SettingsModal({
     setUpdateResult(null)
     try {
       const result = await rpc().request['app:checkForUpdates']({})
-      setUpdateResult(result.updateAvailable ? 'Update available! Restart to apply.' : 'You are on the latest version.')
+      if (!result.success) {
+        setUpdateResult(result.error ?? 'Unable to check for updates right now.')
+      } else if (result.updateAvailable) {
+        setUpdateResult('Update ready. You can restart now or later when prompted.')
+      } else {
+        setUpdateResult('You are on the latest version.')
+      }
     } catch {
       setUpdateResult('Failed to check for updates.')
     } finally {

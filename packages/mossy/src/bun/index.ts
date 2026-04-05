@@ -102,6 +102,9 @@ async function checkForAppUpdate(): Promise<UpdateCheckResult> {
     const info = await Updater.checkForUpdate()
 
     if (!info.updateAvailable) {
+      if (info.error) {
+        return { success: false, updateAvailable: false, error: info.error }
+      }
       return { success: true, updateAvailable: false }
     }
 
