@@ -30,12 +30,12 @@ export default function App() {
     addRepo, removeRepo, setPollInterval, setAutoUpdateEnabled,
     setUpdateCheckInterval, reorderRepos, setDefaultIde,
     setRepoSetupCommands, setIssuePanelOpen, setIssuePanelWidth,
-    setWorktreeBasePath, setIssueTracker, setFetchInterval
+    setWorktreeBasePath, setIssueTracker, setFetchInterval,
+    setDismissedDependencyWarning
   } = useConfig()
   const [settingsOpened, setSettingsOpened] = useState(false)
   const [search, setSearch] = useState('')
   const [dependencyStatus, setDependencyStatus] = useState<DependencyStatus | null>(null)
-  const [dependencyWarningDismissed, setDependencyWarningDismissed] = useState(false)
   const [issueDropTargets, setIssueDropTargets] = useState<Record<string, string | null>>({})
   const [orderedRepos, setOrderedRepos] = useState<RepoConfig[]>([])
   const [panelWidth, setPanelWidth] = useState<number>(260)
@@ -176,10 +176,10 @@ export default function App() {
         <div className="flex flex-1 min-h-0">
           <main className="flex-1 overflow-auto p-4">
             <div className="flex flex-col gap-4">
-              {missingDependencies.length > 0 && !dependencyWarningDismissed && (
+              {missingDependencies.length > 0 && !config.dismissedDependencyWarning && (
                 <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-md px-4 py-3 text-sm relative">
                   <button
-                    onClick={() => setDependencyWarningDismissed(true)}
+                    onClick={() => setDismissedDependencyWarning(true)}
                     className="absolute top-2 right-2 text-yellow-400/60 hover:text-yellow-400 leading-none"
                     aria-label="Dismiss"
                   >
