@@ -94,7 +94,7 @@ async function promptToRestartForUpdate(): Promise<void> {
 
 async function checkForAppUpdate(): Promise<UpdateCheckResult> {
   if (isUpdateCheckInFlight) {
-    return { success: true, updateAvailable: false }
+    return { success: false, updateAvailable: false, error: 'Update check already in progress' }
   }
 
   isUpdateCheckInFlight = true
@@ -102,6 +102,9 @@ async function checkForAppUpdate(): Promise<UpdateCheckResult> {
     const info = await Updater.checkForUpdate()
 
     if (!info.updateAvailable) {
+      if (info.error) {
+        return { success: false, updateAvailable: false, error: info.error }
+      }
       return { success: true, updateAvailable: false }
     }
 
