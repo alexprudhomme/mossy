@@ -138,6 +138,14 @@ export function useConfig() {
     [config, save]
   )
 
+  const setDismissedDependencyWarning = useCallback(
+    async (dismissed: boolean) => {
+      if (!config) return
+      await save({ ...config, dismissedDependencyWarning: dismissed })
+    },
+    [config, save]
+  )
+
   return {
     config,
     loading,
@@ -154,6 +162,7 @@ export function useConfig() {
     setIssuePanelWidth,
     setFetchInterval,
     setIssueTracker,
-    setWorktreeBasePath
+    setWorktreeBasePath,
+    setDismissedDependencyWarning
   }
 }

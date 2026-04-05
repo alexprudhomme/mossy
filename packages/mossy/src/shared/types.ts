@@ -22,6 +22,7 @@ export interface AppConfig {
   defaultIde: IdeId
   issuePanelOpen: boolean
   issuePanelWidth: number
+  dismissedDependencyWarning: boolean
 }
 
 export interface Worktree {

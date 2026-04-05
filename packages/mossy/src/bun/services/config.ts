@@ -29,7 +29,8 @@ const DEFAULTS: AppConfig = {
   collapsedRepos: [],
   defaultIde: 'vscode',
   issuePanelOpen: false,
-  issuePanelWidth: 260
+  issuePanelWidth: 260,
+  dismissedDependencyWarning: false
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -68,7 +69,8 @@ function sanitizeConfig(config: Partial<AppConfig>): AppConfig {
     issuePanelOpen: typeof config.issuePanelOpen === 'boolean' ? config.issuePanelOpen : DEFAULTS.issuePanelOpen,
     issuePanelWidth: typeof config.issuePanelWidth === 'number'
       ? clamp(Math.round(config.issuePanelWidth), MIN_ISSUE_PANEL_WIDTH, MAX_ISSUE_PANEL_WIDTH)
-      : DEFAULTS.issuePanelWidth
+      : DEFAULTS.issuePanelWidth,
+    dismissedDependencyWarning: typeof config.dismissedDependencyWarning === 'boolean' ? config.dismissedDependencyWarning : DEFAULTS.dismissedDependencyWarning
   }
 }
 
