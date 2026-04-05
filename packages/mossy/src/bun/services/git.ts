@@ -156,6 +156,24 @@ export async function getWorktreeStatus(worktreePath: string): Promise<WorktreeS
     }
   }
 
+  // Also count lines in untracked files (new files not yet staged)
+  const untrackedOut = await gitSilent(
+    ['ls-files', '--others', '--exclude-standard'],
+    worktreePath
+  )
+  if (untrackedOut) {
+    for (const relPath of untrackedOut.trim().split('\n').filter(Boolean)) {
+      try {
+        const fullPath = path.join(worktreePath, relPath)
+        const content = await Bun.file(fullPath).text()
+        const lineCount = content ? content.split('\n').length : 0
+        linesAdded += lineCount
+      } catch {
+        // Skip files that can't be read (e.g. broken symlinks)
+      }
+    }
+  }
+
   const pushOut = await gitSilent(['log', '@{u}..', '--oneline'], worktreePath)
   if (pushOut) {
     const lines = pushOut.trim().split('\n').filter(Boolean)
