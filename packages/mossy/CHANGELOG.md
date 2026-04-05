@@ -1,5 +1,13 @@
 # mossy
 
+## 0.2.3
+
+### Patch Changes
+
+- ed031f3: Make the missing dependency yellow warning dismissible with an × button.
+- 571680f: Remove the staged/unstaged split in the diff panel file list. All changed files now appear in a single unified list; the checkbox is the sole indicator of whether a file is staged. Checking/unchecking still stages or unstages the file but files no longer jump between sections.
+- a94d47a: Fix worktree diff line counts excluding untracked files. Previously, `+N -N` stats only counted tracked file changes via `git diff --numstat HEAD`, so new files that hadn't been staged yet were completely invisible. Now untracked files are discovered with `git ls-files --others --exclude-standard` and their line counts are added to the total.
+
 ## 0.2.2
 
 ### Patch Changes
