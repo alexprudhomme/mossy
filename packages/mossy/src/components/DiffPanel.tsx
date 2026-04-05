@@ -162,50 +162,35 @@ function FileList({
   onStage: (paths: string[]) => void
   onUnstage: (paths: string[]) => void
 }) {
-  const changes = [...unstaged, ...untracked]
+  // Merge all files into a single list. A file may appear in both staged and
+  // unstaged (partially staged); we deduplicate by path, preferring the staged entry.
+  const stagedPaths = new Set(staged.map((f) => f.path))
+  const allFiles: Array<FileEntry & { isStaged: boolean }> = [
+    ...staged.map((f) => ({ ...f, isStaged: true })),
+    ...[...unstaged, ...untracked]
+      .filter((f) => !stagedPaths.has(f.path))
+      .map((f) => ({ ...f, isStaged: false })),
+  ]
 
   return (
     <div className="flex h-full w-[220px] min-w-[220px] flex-col border-r border-border overflow-y-auto">
-      {/* Staged section */}
       <div className="px-2 pt-2 pb-1">
         <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          <span>Staged Changes</span>
-          <span className="text-[#484f58]">{staged.length}</span>
-        </div>
-      </div>
-      {staged.length === 0 ? (
-        <div className="px-3 py-1 text-[10px] text-[#484f58] italic">No staged files</div>
-      ) : (
-        staged.map((f) => (
-          <FileItem
-            key={`staged-${f.path}`}
-            file={f}
-            isStaged
-            isSelected={selectedFile?.path === f.path && selectedFile?.staged === true}
-            onSelect={() => onSelectFile(f.path, true)}
-            onToggleStage={() => onUnstage([f.path])}
-          />
-        ))
-      )}
-
-      {/* Changes section */}
-      <div className="mt-2 px-2 pb-1">
-        <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           <span>Changes</span>
-          <span className="text-[#484f58]">{changes.length}</span>
+          <span className="text-[#484f58]">{allFiles.length}</span>
         </div>
       </div>
-      {changes.length === 0 ? (
+      {allFiles.length === 0 ? (
         <div className="px-3 py-1 text-[10px] text-[#484f58] italic">No changes</div>
       ) : (
-        changes.map((f) => (
+        allFiles.map((f) => (
           <FileItem
-            key={`change-${f.path}`}
+            key={f.path}
             file={f}
-            isStaged={false}
-            isSelected={selectedFile?.path === f.path && selectedFile?.staged === false}
-            onSelect={() => onSelectFile(f.path, false)}
-            onToggleStage={() => onStage([f.path])}
+            isStaged={f.isStaged}
+            isSelected={selectedFile?.path === f.path}
+            onSelect={() => onSelectFile(f.path, f.isStaged)}
+            onToggleStage={() => f.isStaged ? onUnstage([f.path]) : onStage([f.path])}
           />
         ))
       )}
@@ -466,7 +451,10 @@ export function DiffPanel({ worktreePath, className }: DiffPanelProps) {
   const staged = gitStatus?.staged ?? []
   const unstaged_ = gitStatus?.unstaged ?? []
   const untracked = gitStatus?.untracked ?? []
-  const totalChanges = staged.length + unstaged_.length + untracked.length
+  const stagedPaths = new Set(staged.map((f) => f.path))
+  const totalChanges =
+    staged.length +
+    [...unstaged_, ...untracked].filter((f) => !stagedPaths.has(f.path)).length
 
   return (
     <div className={cn('relative flex flex-col', className)}>
