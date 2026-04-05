@@ -22,6 +22,7 @@ const DEFAULT_CONFIG: AppConfig = {
   defaultIde: 'vscode',
   issuePanelOpen: false,
   issuePanelWidth: 260,
+  dismissedDependencyWarning: false,
 }
 
 // Mock diffs keyed by file path for realistic testing

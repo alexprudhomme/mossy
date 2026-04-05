@@ -184,7 +184,7 @@ export function SettingsModal({
       if (!result.success) {
         setUpdateResult(result.error ?? 'Unable to check for updates right now.')
       } else if (result.updateAvailable) {
-        setUpdateResult('Update ready. You can restart now or later when prompted.')
+        setUpdateResult('Update available! Restart to apply when prompted.')
       } else {
         setUpdateResult('You are on the latest version.')
       }

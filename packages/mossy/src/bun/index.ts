@@ -94,7 +94,7 @@ async function promptToRestartForUpdate(): Promise<void> {
 
 async function checkForAppUpdate(): Promise<UpdateCheckResult> {
   if (isUpdateCheckInFlight) {
-    return { success: true, updateAvailable: false }
+    return { success: false, updateAvailable: false, error: 'Update check already in progress' }
   }
 
   isUpdateCheckInFlight = true
