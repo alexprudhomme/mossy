@@ -10,7 +10,7 @@ import type { AppConfig } from '../shared/types'
 
 const DEFAULT_CONFIG: AppConfig = {
   repositories: [
-    { id: 'demo-1', name: 'mossy', path: '/Users/alexprudhomme/dev/mossy' },
+    { id: 'demo-1', name: 'mossy', path: '/Users/dev/mossy' },
   ],
   worktreeBasePath: '~/Developer/worktrees',
   issueTracker: 'none',
