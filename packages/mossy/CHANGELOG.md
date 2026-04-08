@@ -1,5 +1,11 @@
 # mossy
 
+## 0.2.5
+
+### Patch Changes
+
+- cec274d: Add custom app icon using Ghostty-inspired color palette (coral pink on dark navy).
+
 ## 0.2.4
 
 ### Patch Changes
