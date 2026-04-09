@@ -37,7 +37,8 @@ export async function getMyJiraIssues(): Promise<Issue[]> {
     return data
       .filter((item: any) => {
         const status: string = item.fields?.status?.name ?? ''
-        return !DONE_STATUSES.has(status.toLowerCase())
+        const issueType: string = (item.fields?.issueType?.name || item.fields?.issuetype?.name || '').toLowerCase()
+        return !DONE_STATUSES.has(status.toLowerCase()) && issueType !== 'epic'
       })
       .map((item: any) => ({
         key: item.key,
