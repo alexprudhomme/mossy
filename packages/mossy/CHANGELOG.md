@@ -1,5 +1,11 @@
 # mossy
 
+## 0.2.6
+
+### Patch Changes
+
+- 40c6253: Exclude Epic issue types from the Jira issues panel.
+
 ## 0.2.5
 
 ### Patch Changes
