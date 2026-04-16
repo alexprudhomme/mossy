@@ -169,7 +169,14 @@ export default function App() {
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <div className="flex flex-col h-screen bg-background text-foreground">
         {/* Header / Title bar */}
-        <header className="flex items-center justify-end h-[38px] px-4 border-b border-primary/15 shrink-0 electrobun-webkit-app-region-drag">
+        <header
+          className="flex items-center justify-end h-[38px] px-4 border-b border-primary/15 shrink-0 select-none electrobun-webkit-app-region-drag"
+          onDoubleClick={(e) => {
+            // Don't zoom when double-clicking the search input
+            if (e.target instanceof HTMLInputElement) return
+            rpc().request['app:toggleZoom']({})
+          }}
+        >
           <div className="flex items-center gap-1.5 electrobun-webkit-app-region-no-drag">
             <div className="relative flex items-center">
               <IconSearch size={14} className="absolute left-2 text-[#484f58]" />

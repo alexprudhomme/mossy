@@ -165,6 +165,10 @@ export type MossyRPC = {
         params: Record<string, never>
         response: void
       }
+      'app:toggleZoom': {
+        params: Record<string, never>
+        response: void
+      }
       'app:version': {
         params: Record<string, never>
         response: string

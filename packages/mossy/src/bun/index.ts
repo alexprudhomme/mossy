@@ -297,6 +297,13 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
       'app:closeWindow': () => {
         win.close()
       },
+      'app:toggleZoom': () => {
+        if (win.isMaximized()) {
+          win.unmaximize()
+        } else {
+          win.maximize()
+        }
+      },
       'app:version': () => {
         return pkg.version
       },
