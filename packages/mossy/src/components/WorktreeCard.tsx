@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo } from 'react'
-import { IconGitBranch, IconTrash, IconChevronDown, IconChevronRight } from '@tabler/icons-react'
+import { IconGitBranch, IconTrash, IconChevronDown, IconChevronRight, IconGripVertical } from '@tabler/icons-react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { cn } from '../lib/utils'
 import { IssueBadge } from './IssueBadge'
 import { PRBadge } from './PRBadge'
@@ -64,6 +66,7 @@ export function WorktreeCard({
   const [deleteOpened, setDeleteOpened] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: worktree.path })
 
   const { pr, loading: prLoading } = usePR(repoPath, worktree.isMain ? null : worktree.branch, pollIntervalSec, refreshKey)
 
@@ -86,20 +89,34 @@ export function WorktreeCard({
 
   return (
     <div
+      ref={setNodeRef}
       className={cn(
         'flex flex-col rounded-lg border overflow-hidden transition-all duration-150',
-        deleting
-          ? 'border-border/50 bg-card/50 opacity-45 pointer-events-none'
-          : hovered
-            ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
-            : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
+        isDragging
+          ? 'opacity-40'
+          : deleting
+            ? 'border-border/50 bg-card/50 opacity-45 pointer-events-none'
+            : hovered
+              ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
+              : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
       )}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition: isDragging ? transition ?? undefined : undefined,
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
       <div className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
+            <button
+              className="p-0.5 rounded-md text-[#484f58] hover:text-muted-foreground cursor-grab touch-none transition-colors shrink-0"
+              {...attributes}
+              {...listeners}
+            >
+              <IconGripVertical size={14} />
+            </button>
             <button
               onClick={toggleExpand}
               className="p-0.5 rounded-md hover:bg-accent text-muted-foreground transition-colors shrink-0"
