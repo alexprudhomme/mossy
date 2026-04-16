@@ -23,6 +23,7 @@ const DEFAULT_CONFIG: AppConfig = {
   issuePanelOpen: false,
   issuePanelWidth: 260,
   dismissedDependencyWarning: false,
+  zoomLevel: 1,
 }
 
 // Mock diffs keyed by file path for realistic testing

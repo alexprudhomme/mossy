@@ -14,6 +14,15 @@ const rpc = Electroview.defineRPC<MossyRPC>({
     messages: {
       'ui:openSettings': () => {
         window.dispatchEvent(new CustomEvent('mossy:open-settings'))
+      },
+      'ui:zoomIn': () => {
+        window.dispatchEvent(new CustomEvent('mossy:zoom-in'))
+      },
+      'ui:zoomOut': () => {
+        window.dispatchEvent(new CustomEvent('mossy:zoom-out'))
+      },
+      'ui:zoomReset': () => {
+        window.dispatchEvent(new CustomEvent('mossy:zoom-reset'))
       }
     }
   }

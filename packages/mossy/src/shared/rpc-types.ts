@@ -180,6 +180,9 @@ export type MossyRPC = {
     requests: Record<string, never>
     messages: {
       'ui:openSettings': void
+      'ui:zoomIn': void
+      'ui:zoomOut': void
+      'ui:zoomReset': void
     }
   }>
 }

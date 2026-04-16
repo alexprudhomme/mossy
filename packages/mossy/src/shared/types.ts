@@ -23,6 +23,7 @@ export interface AppConfig {
   issuePanelOpen: boolean
   issuePanelWidth: number
   dismissedDependencyWarning: boolean
+  zoomLevel: number
 }
 
 export interface Worktree {

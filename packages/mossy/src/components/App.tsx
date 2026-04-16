@@ -31,7 +31,7 @@ export default function App() {
     setUpdateCheckInterval, reorderRepos, setDefaultIde,
     setRepoSetupCommands, setIssuePanelOpen, setIssuePanelWidth,
     setWorktreeBasePath, setIssueTracker, setFetchInterval,
-    setDismissedDependencyWarning
+    setDismissedDependencyWarning, setZoomLevel
   } = useConfig()
   const [settingsOpened, setSettingsOpened] = useState(false)
   const [search, setSearch] = useState('')
@@ -88,23 +88,61 @@ export default function App() {
     }
   }, [])
 
+  // Apply zoom level to root element
+  useEffect(() => {
+    if (!config) return
+    const zoom = config.zoomLevel ?? 1
+    document.documentElement.style.zoom = String(zoom)
+  }, [config?.zoomLevel])
+
+  // Zoom helpers
+  const zoomIn = useCallback(() => {
+    if (!config) return
+    const next = Math.round(((config.zoomLevel ?? 1) + 0.1) * 10) / 10
+    void setZoomLevel(Math.min(next, 2.0))
+  }, [config, setZoomLevel])
+
+  const zoomOut = useCallback(() => {
+    if (!config) return
+    const next = Math.round(((config.zoomLevel ?? 1) - 0.1) * 10) / 10
+    void setZoomLevel(Math.max(next, 0.5))
+  }, [config, setZoomLevel])
+
+  const zoomReset = useCallback(() => {
+    void setZoomLevel(1)
+  }, [setZoomLevel])
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!e.metaKey) return
       if (e.key === 'q') { e.preventDefault(); rpc().request['app:quit']({}) }
       else if (e.key === 'w') { e.preventDefault(); rpc().request['app:closeWindow']({}) }
+      else if (e.key === '=' || e.key === '+') { e.preventDefault(); zoomIn() }
+      else if (e.key === '-') { e.preventDefault(); zoomOut() }
+      else if (e.key === '0') { e.preventDefault(); zoomReset() }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [zoomIn, zoomOut, zoomReset])
 
   // Settings event from main process menu
   useEffect(() => {
     const handleOpenSettings = () => setSettingsOpened(true)
+    const handleZoomIn = () => zoomIn()
+    const handleZoomOut = () => zoomOut()
+    const handleZoomReset = () => zoomReset()
     window.addEventListener('mossy:open-settings', handleOpenSettings)
-    return () => window.removeEventListener('mossy:open-settings', handleOpenSettings)
-  }, [])
+    window.addEventListener('mossy:zoom-in', handleZoomIn)
+    window.addEventListener('mossy:zoom-out', handleZoomOut)
+    window.addEventListener('mossy:zoom-reset', handleZoomReset)
+    return () => {
+      window.removeEventListener('mossy:open-settings', handleOpenSettings)
+      window.removeEventListener('mossy:zoom-in', handleZoomIn)
+      window.removeEventListener('mossy:zoom-out', handleZoomOut)
+      window.removeEventListener('mossy:zoom-reset', handleZoomReset)
+    }
+  }, [zoomIn, zoomOut, zoomReset])
 
   useEffect(() => { loadDependencies() }, [loadDependencies])
 
