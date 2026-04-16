@@ -28,7 +28,7 @@ export default function App() {
   const {
     config, loading,
     addRepo, removeRepo, setPollInterval, setAutoUpdateEnabled,
-    setUpdateCheckInterval, reorderRepos, setDefaultIde,
+    setUpdateCheckInterval, reorderRepos, reorderWorktrees, setDefaultIde,
     setRepoSetupCommands, setIssuePanelOpen, setIssuePanelWidth,
     setWorktreeBasePath, setIssueTracker, setFetchInterval,
     setDismissedDependencyWarning, setZoomLevel
@@ -235,7 +235,9 @@ export default function App() {
                 fetchIntervalSec={config.fetchIntervalSec}
                 defaultIde={config.defaultIde}
                 issueTracker={config.issueTracker}
+                worktreeOrder={config.worktreeOrder}
                 onReorder={(repos) => { setOrderedRepos(repos); void reorderRepos(repos) }}
+                onReorderWorktrees={reorderWorktrees}
                 isDraggingIssue={isDraggingIssue}
                 overRepoId={overRepoId}
                 issueDropTargets={issueDropTargets}

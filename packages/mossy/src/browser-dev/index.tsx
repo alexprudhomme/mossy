@@ -24,6 +24,7 @@ const DEFAULT_CONFIG: AppConfig = {
   issuePanelWidth: 260,
   dismissedDependencyWarning: false,
   zoomLevel: 1,
+  worktreeOrder: {},
 }
 
 // Mock diffs keyed by file path for realistic testing

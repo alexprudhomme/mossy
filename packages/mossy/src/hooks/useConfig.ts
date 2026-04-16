@@ -38,7 +38,8 @@ export function useConfig() {
   const removeRepo = useCallback(
     async (id: string) => {
       if (!config) return
-      const updated = { ...config, repositories: config.repositories.filter((r) => r.id !== id) }
+      const { [id]: _, ...remainingOrder } = config.worktreeOrder
+      const updated = { ...config, repositories: config.repositories.filter((r) => r.id !== id), worktreeOrder: remainingOrder }
       await save(updated)
     },
     [config, save]
@@ -72,6 +73,14 @@ export function useConfig() {
     async (repositories: RepoConfig[]) => {
       if (!config) return
       await save({ ...config, repositories })
+    },
+    [config, save]
+  )
+
+  const reorderWorktrees = useCallback(
+    async (repoId: string, worktreePaths: string[]) => {
+      if (!config) return
+      await save({ ...config, worktreeOrder: { ...config.worktreeOrder, [repoId]: worktreePaths } })
     },
     [config, save]
   )
@@ -165,6 +174,7 @@ export function useConfig() {
     setAutoUpdateEnabled,
     setUpdateCheckInterval,
     reorderRepos,
+    reorderWorktrees,
     setDefaultIde,
     setRepoSetupCommands,
     setIssuePanelOpen,

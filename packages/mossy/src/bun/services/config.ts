@@ -33,7 +33,8 @@ const DEFAULTS: AppConfig = {
   issuePanelOpen: false,
   issuePanelWidth: 260,
   dismissedDependencyWarning: false,
-  zoomLevel: 1
+  zoomLevel: 1,
+  worktreeOrder: {}
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -76,7 +77,14 @@ function sanitizeConfig(config: Partial<AppConfig>): AppConfig {
     dismissedDependencyWarning: typeof config.dismissedDependencyWarning === 'boolean' ? config.dismissedDependencyWarning : DEFAULTS.dismissedDependencyWarning,
     zoomLevel: typeof config.zoomLevel === 'number'
       ? Math.round(clamp(config.zoomLevel, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL) * 10) / 10
-      : DEFAULTS.zoomLevel
+      : DEFAULTS.zoomLevel,
+    worktreeOrder: config.worktreeOrder && typeof config.worktreeOrder === 'object' && !Array.isArray(config.worktreeOrder)
+      ? Object.fromEntries(
+          Object.entries(config.worktreeOrder).filter(
+            ([, v]) => Array.isArray(v) && v.every((p) => typeof p === 'string')
+          )
+        )
+      : {}
   }
 }
 

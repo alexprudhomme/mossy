@@ -1,9 +1,16 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   IconRefresh, IconPlus, IconChevronDown, IconChevronRight, IconGripVertical,
   IconAlertCircle, IconCheck, IconX
 } from '@tabler/icons-react'
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import {
+  DndContext,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core'
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '../lib/utils'
 import { WorktreeCard } from './WorktreeCard'
@@ -12,7 +19,8 @@ import { useWorktrees } from '../hooks/useWorktrees'
 import { useCollapsed } from '../hooks/useCollapsed'
 import { useHomedir } from '../hooks/useHomedir'
 import { useFetchRepo } from '../hooks/useFetchRepo'
-import type { IdeId, IssueTracker, RepoConfig } from '../shared/types'
+import type { DragEndEvent } from '@dnd-kit/core'
+import type { IdeId, IssueTracker, RepoConfig, Worktree } from '../shared/types'
 
 // --- RepoSection ---
 
@@ -28,11 +36,14 @@ interface RepoSectionProps {
   isOver: boolean
   issueDropBranch: string | null
   onIssueDropBranchClear: () => void
+  savedWorktreeOrder: string[]
+  onReorderWorktrees: (repoId: string, worktreePaths: string[]) => void
 }
 
 function RepoSection({
   repo, pollIntervalSec, fetchIntervalSec, defaultIde, issueTracker,
-  isCollapsed, onToggleCollapse, isDropTarget, isOver, issueDropBranch, onIssueDropBranchClear
+  isCollapsed, onToggleCollapse, isDropTarget, isOver, issueDropBranch, onIssueDropBranchClear,
+  savedWorktreeOrder, onReorderWorktrees
 }: RepoSectionProps) {
   const { worktrees, loading, error, deleteError, deletingPaths, startDelete, clearDeleteError, settingUpPaths, setupError, startSetup, clearSetupError, refresh } = useWorktrees(repo.path, pollIntervalSec)
   const [addOpened, setAddOpened] = useState(false)
@@ -42,6 +53,30 @@ function RepoSection({
 
   const handleFetched = useCallback(() => setRefreshKey((k) => k + 1), [])
   useFetchRepo(repo.path, fetchIntervalSec, handleFetched)
+
+  // Derive ordered worktrees: saved order first, then any new ones at end
+  const orderedWorktrees = useMemo(() => {
+    if (savedWorktreeOrder.length === 0) return worktrees
+    const orderMap = new Map(savedWorktreeOrder.map((p, i) => [p, i]))
+    const sorted = [...worktrees].sort((a, b) => {
+      const ai = orderMap.get(a.path) ?? Number.MAX_SAFE_INTEGER
+      const bi = orderMap.get(b.path) ?? Number.MAX_SAFE_INTEGER
+      return ai - bi
+    })
+    return sorted
+  }, [worktrees, savedWorktreeOrder])
+
+  const worktreeSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+
+  const handleWorktreeDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const oldIndex = orderedWorktrees.findIndex((wt) => wt.path === active.id)
+    const newIndex = orderedWorktrees.findIndex((wt) => wt.path === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+    const reordered = arrayMove(orderedWorktrees, oldIndex, newIndex)
+    onReorderWorktrees(repo.id, reordered.map((wt) => wt.path))
+  }, [orderedWorktrees, onReorderWorktrees, repo.id])
 
   useEffect(() => {
     if (issueDropBranch) setAddOpened(true)
@@ -156,22 +191,26 @@ function RepoSection({
               <span className="text-sm text-muted-foreground">Loading worktrees...</span>
             </div>
           ) : (
-            <div className="flex flex-col gap-3">
-              {worktrees.map((wt) => (
-                <WorktreeCard
-                  key={wt.path}
-                  worktree={wt}
-                  repoPath={repo.path}
-                  pollIntervalSec={pollIntervalSec}
-                  refreshKey={refreshKey}
-                  defaultIde={defaultIde}
-                  issueTracker={issueTracker}
-                  deleting={deletingPaths.has(wt.path)}
-                  settingUp={settingUpPaths.has(wt.path)}
-                  onConfirmDelete={(force) => startDelete(wt.path, force)}
-                />
-              ))}
-            </div>
+            <DndContext sensors={worktreeSensors} collisionDetection={closestCenter} onDragEnd={handleWorktreeDragEnd}>
+              <SortableContext items={orderedWorktrees.map((wt) => wt.path)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-3">
+                  {orderedWorktrees.map((wt) => (
+                    <WorktreeCard
+                      key={wt.path}
+                      worktree={wt}
+                      repoPath={repo.path}
+                      pollIntervalSec={pollIntervalSec}
+                      refreshKey={refreshKey}
+                      defaultIde={defaultIde}
+                      issueTracker={issueTracker}
+                      deleting={deletingPaths.has(wt.path)}
+                      settingUp={settingUpPaths.has(wt.path)}
+                      onConfirmDelete={(force) => startDelete(wt.path, force)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       )}
@@ -187,7 +226,9 @@ interface RepoDashboardProps {
   fetchIntervalSec: number
   defaultIde: IdeId
   issueTracker: IssueTracker
+  worktreeOrder: Record<string, string[]>
   onReorder: (repos: RepoConfig[]) => void
+  onReorderWorktrees: (repoId: string, worktreePaths: string[]) => void
   isDraggingIssue: boolean
   overRepoId: string | null
   issueDropTargets: Record<string, string | null>
@@ -196,7 +237,7 @@ interface RepoDashboardProps {
 
 export function RepoDashboard({
   repos, pollIntervalSec, fetchIntervalSec, defaultIde, issueTracker,
-  onReorder, isDraggingIssue, overRepoId, issueDropTargets, onIssueDropBranchClear
+  worktreeOrder, onReorder, onReorderWorktrees, isDraggingIssue, overRepoId, issueDropTargets, onIssueDropBranchClear
 }: RepoDashboardProps) {
   const { collapsed, toggle } = useCollapsed()
   const [orderedRepos, setOrderedRepos] = useState(repos)
@@ -229,6 +270,8 @@ export function RepoDashboard({
             isOver={overRepoId === repo.id}
             issueDropBranch={issueDropTargets[repo.id] ?? null}
             onIssueDropBranchClear={() => onIssueDropBranchClear(repo.id)}
+            savedWorktreeOrder={worktreeOrder[repo.id] ?? []}
+            onReorderWorktrees={onReorderWorktrees}
           />
         ))}
       </div>
