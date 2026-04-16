@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { IconSettings, IconSearch, IconX, IconTicket } from '@tabler/icons-react'
+import { IconSettings, IconTicket } from '@tabler/icons-react'
 import {
   DndContext,
   PointerSensor,
@@ -34,7 +34,6 @@ export default function App() {
     setDismissedDependencyWarning, setZoomLevel
   } = useConfig()
   const [settingsOpened, setSettingsOpened] = useState(false)
-  const [search, setSearch] = useState('')
   const [dependencyStatus, setDependencyStatus] = useState<DependencyStatus | null>(null)
   const [issueDropTargets, setIssueDropTargets] = useState<Record<string, string | null>>({})
   const [orderedRepos, setOrderedRepos] = useState<RepoConfig[]>([])
@@ -171,32 +170,11 @@ export default function App() {
         {/* Header / Title bar */}
         <header
           className="flex items-center justify-end h-[38px] px-4 border-b border-primary/15 shrink-0 select-none electrobun-webkit-app-region-drag"
-          onDoubleClick={(e) => {
-            // Don't zoom when double-clicking the search input
-            if (e.target instanceof HTMLInputElement) return
+          onDoubleClick={() => {
             rpc().request['app:toggleZoom']({})
           }}
         >
           <div className="flex items-center gap-1.5 electrobun-webkit-app-region-no-drag">
-            <div className="relative flex items-center">
-              <IconSearch size={14} className="absolute left-2 text-[#484f58]" />
-              <input
-                type="text"
-                placeholder="Filter worktrees…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                className="w-[220px] bg-transparent border-none text-xs text-foreground placeholder-[#484f58] pl-7 pr-6 py-1 focus:outline-none"
-              />
-              {search && (
-                <button onClick={() => setSearch('')} className="absolute right-1 p-0.5 rounded-md text-[#484f58] hover:text-foreground transition-colors">
-                  <IconX size={12} />
-                </button>
-              )}
-            </div>
-
             {issueTracker !== 'none' && (
               <button
                 onClick={() => setIssuePanelOpen(!issuePanelOpen)}
@@ -255,7 +233,6 @@ export default function App() {
                 repos={orderedRepos}
                 pollIntervalSec={config.pollIntervalSec}
                 fetchIntervalSec={config.fetchIntervalSec}
-                search={search}
                 defaultIde={config.defaultIde}
                 issueTracker={config.issueTracker}
                 onReorder={(repos) => { setOrderedRepos(repos); void reorderRepos(repos) }}

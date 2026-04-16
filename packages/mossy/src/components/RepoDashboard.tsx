@@ -20,7 +20,6 @@ interface RepoSectionProps {
   repo: RepoConfig
   pollIntervalSec: number
   fetchIntervalSec: number
-  search: string
   defaultIde: IdeId
   issueTracker: IssueTracker
   isCollapsed: boolean
@@ -32,7 +31,7 @@ interface RepoSectionProps {
 }
 
 function RepoSection({
-  repo, pollIntervalSec, fetchIntervalSec, search, defaultIde, issueTracker,
+  repo, pollIntervalSec, fetchIntervalSec, defaultIde, issueTracker,
   isCollapsed, onToggleCollapse, isDropTarget, isOver, issueDropBranch, onIssueDropBranchClear
 }: RepoSectionProps) {
   const { worktrees, loading, error, deleteError, deletingPaths, startDelete, clearDeleteError, settingUpPaths, setupError, startSetup, clearSetupError, refresh } = useWorktrees(repo.path, pollIntervalSec)
@@ -61,12 +60,8 @@ function RepoSection({
   }
 
   const dropHighlight = isDropTarget && isOver
-  const query = search.toLowerCase()
-  const filtered = query
-    ? worktrees.filter((wt) => wt.branch.toLowerCase().includes(query) || wt.path.toLowerCase().includes(query))
-    : worktrees
 
-  if (!loading && filtered.length === 0 && query) return null
+  if (!loading && worktrees.length === 0) return null
 
   return (
     <div
@@ -162,7 +157,7 @@ function RepoSection({
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {filtered.map((wt) => (
+              {worktrees.map((wt) => (
                 <WorktreeCard
                   key={wt.path}
                   worktree={wt}
@@ -190,7 +185,6 @@ interface RepoDashboardProps {
   repos: RepoConfig[]
   pollIntervalSec: number
   fetchIntervalSec: number
-  search: string
   defaultIde: IdeId
   issueTracker: IssueTracker
   onReorder: (repos: RepoConfig[]) => void
@@ -201,7 +195,7 @@ interface RepoDashboardProps {
 }
 
 export function RepoDashboard({
-  repos, pollIntervalSec, fetchIntervalSec, search, defaultIde, issueTracker,
+  repos, pollIntervalSec, fetchIntervalSec, defaultIde, issueTracker,
   onReorder, isDraggingIssue, overRepoId, issueDropTargets, onIssueDropBranchClear
 }: RepoDashboardProps) {
   const { collapsed, toggle } = useCollapsed()
@@ -227,7 +221,6 @@ export function RepoDashboard({
             repo={repo}
             pollIntervalSec={pollIntervalSec}
             fetchIntervalSec={fetchIntervalSec}
-            search={search}
             defaultIde={defaultIde}
             issueTracker={issueTracker}
             isCollapsed={collapsed.has(repo.id)}
