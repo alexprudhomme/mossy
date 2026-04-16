@@ -55,7 +55,7 @@ function RepoSection({
   useFetchRepo(repo.path, fetchIntervalSec, handleFetched)
 
   // Derive ordered worktrees: saved order first, then any new ones at end
-  const orderedWorktrees = useMemo(() => {
+  const derivedWorktrees = useMemo(() => {
     if (savedWorktreeOrder.length === 0) return worktrees
     const orderMap = new Map(savedWorktreeOrder.map((p, i) => [p, i]))
     const sorted = [...worktrees].sort((a, b) => {
@@ -66,6 +66,10 @@ function RepoSection({
     return sorted
   }, [worktrees, savedWorktreeOrder])
 
+  // Optimistic local state — prevents snap-back flicker during async config save
+  const [orderedWorktrees, setOrderedWorktrees] = useState<Worktree[]>(derivedWorktrees)
+  useEffect(() => { setOrderedWorktrees(derivedWorktrees) }, [derivedWorktrees])
+
   const worktreeSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
   const handleWorktreeDragEnd = useCallback((event: DragEndEvent) => {
@@ -75,6 +79,7 @@ function RepoSection({
     const newIndex = orderedWorktrees.findIndex((wt) => wt.path === over.id)
     if (oldIndex === -1 || newIndex === -1) return
     const reordered = arrayMove(orderedWorktrees, oldIndex, newIndex)
+    setOrderedWorktrees(reordered)
     onReorderWorktrees(repo.id, reordered.map((wt) => wt.path))
   }, [orderedWorktrees, onReorderWorktrees, repo.id])
 
