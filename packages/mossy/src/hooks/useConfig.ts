@@ -146,6 +146,15 @@ export function useConfig() {
     [config, save]
   )
 
+  const setZoomLevel = useCallback(
+    async (level: number) => {
+      if (!config) return
+      const clamped = Math.round(Math.min(Math.max(level, 0.5), 2.0) * 10) / 10
+      await save({ ...config, zoomLevel: clamped })
+    },
+    [config, save]
+  )
+
   return {
     config,
     loading,
@@ -163,6 +172,7 @@ export function useConfig() {
     setFetchInterval,
     setIssueTracker,
     setWorktreeBasePath,
-    setDismissedDependencyWarning
+    setDismissedDependencyWarning,
+    setZoomLevel
   }
 }

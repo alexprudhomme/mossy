@@ -13,6 +13,8 @@ const MIN_UPDATE_CHECK_INTERVAL_MIN = 5
 const MAX_UPDATE_CHECK_INTERVAL_MIN = 1440
 const MIN_ISSUE_PANEL_WIDTH = 180
 const MAX_ISSUE_PANEL_WIDTH = 600
+const MIN_ZOOM_LEVEL = 0.5
+const MAX_ZOOM_LEVEL = 2.0
 
 const CONFIG_PATH = path.join(os.homedir(), '.config', 'mossy', CONFIG_FILENAME)
 
@@ -30,7 +32,8 @@ const DEFAULTS: AppConfig = {
   defaultIde: 'vscode',
   issuePanelOpen: false,
   issuePanelWidth: 260,
-  dismissedDependencyWarning: false
+  dismissedDependencyWarning: false,
+  zoomLevel: 1
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -70,7 +73,10 @@ function sanitizeConfig(config: Partial<AppConfig>): AppConfig {
     issuePanelWidth: typeof config.issuePanelWidth === 'number'
       ? clamp(Math.round(config.issuePanelWidth), MIN_ISSUE_PANEL_WIDTH, MAX_ISSUE_PANEL_WIDTH)
       : DEFAULTS.issuePanelWidth,
-    dismissedDependencyWarning: typeof config.dismissedDependencyWarning === 'boolean' ? config.dismissedDependencyWarning : DEFAULTS.dismissedDependencyWarning
+    dismissedDependencyWarning: typeof config.dismissedDependencyWarning === 'boolean' ? config.dismissedDependencyWarning : DEFAULTS.dismissedDependencyWarning,
+    zoomLevel: typeof config.zoomLevel === 'number'
+      ? Math.round(clamp(config.zoomLevel, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL) * 10) / 10
+      : DEFAULTS.zoomLevel
   }
 }
 

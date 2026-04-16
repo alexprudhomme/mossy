@@ -351,6 +351,14 @@ ApplicationMenu.setApplicationMenu([
     ]
   },
   {
+    label: 'View',
+    submenu: [
+      { label: 'Zoom In', action: 'zoom-in', accelerator: 'CmdOrCtrl+=' },
+      { label: 'Zoom Out', action: 'zoom-out', accelerator: 'CmdOrCtrl+-' },
+      { label: 'Actual Size', action: 'zoom-reset', accelerator: 'CmdOrCtrl+0' }
+    ]
+  },
+  {
     label: 'Window',
     submenu: [
       { role: 'minimize' },
@@ -365,6 +373,20 @@ ApplicationMenu.on('application-menu-clicked', (event) => {
   const action = payload.data?.action ?? payload.action
   if (action === 'open-settings') {
     openSettingsFromMenu()
+    return
+  }
+
+  if (action === 'zoom-in' || action === 'zoom-out' || action === 'zoom-reset') {
+    try {
+      win.focus()
+      const webviewRpc = win.webview.rpc
+      if (!webviewRpc) return
+      if (action === 'zoom-in') webviewRpc.send['ui:zoomIn']()
+      else if (action === 'zoom-out') webviewRpc.send['ui:zoomOut']()
+      else webviewRpc.send['ui:zoomReset']()
+    } catch {
+      // Window may not be fully ready yet
+    }
     return
   }
 
