@@ -1,5 +1,11 @@
 # mossy
 
+## 0.4.0
+
+### Minor Changes
+
+- b45fe8d: Add drag-and-drop reordering for worktrees within each repo section, matching the existing repo reorder UX.
+
 ## 0.3.0
 
 ### Minor Changes
