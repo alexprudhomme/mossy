@@ -1,5 +1,16 @@
 # mossy
 
+## 0.3.0
+
+### Minor Changes
+
+- ab4b8e6: Add CMD+/CMD- zoom controls to scale the UI bigger or smaller. Zoom level persists across sessions. CMD+0 resets to default. Also adds a View menu with Zoom In, Zoom Out, and Actual Size items.
+
+### Patch Changes
+
+- c559875: Fix double-clicking the title bar to zoom the window (macOS native behavior) instead of selecting text.
+- 8e432e7: Remove unused filter worktrees functionality from the header bar.
+
 ## 0.2.6
 
 ### Patch Changes
