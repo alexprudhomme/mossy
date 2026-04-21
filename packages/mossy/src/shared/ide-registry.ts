@@ -8,7 +8,7 @@ export interface IdeDefinition {
 }
 
 export const IDE_REGISTRY: Record<IdeId, IdeDefinition> = {
-  vscode: { id: 'vscode', label: 'VS Code', command: ['code'], color: 'neon' },
+  vscode: { id: 'vscode', label: 'VS Code', command: ['code'], color: 'blue' },
   cursor: { id: 'cursor', label: 'Cursor', command: ['cursor'], color: 'violet' },
   intellij: { id: 'intellij', label: 'IntelliJ IDEA', command: ['idea'], color: 'orange' },
   webstorm: { id: 'webstorm', label: 'WebStorm', command: ['webstorm'], color: 'cyan' },
