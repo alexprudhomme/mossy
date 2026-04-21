@@ -160,8 +160,8 @@ export function WorktreeCard({
                 <ReviewBadge pr={pr} />
                 <PRBadge pr={pr} loading={prLoading} />
                 <ConflictsBadge conflicts={conflicts} loading={conflictsLoading} />
-                <DirtyBadge status={wtStatus} loading={wtStatusLoading} worktreePath={worktree.path} onPullComplete={refreshStatus} />
                 <IssueBadge issueKey={issueKey} issue={issue} loading={issueLoading} issueTracker={issueTracker} />
+                <DirtyBadge status={wtStatus} loading={wtStatusLoading} worktreePath={worktree.path} onPullComplete={refreshStatus} />
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
