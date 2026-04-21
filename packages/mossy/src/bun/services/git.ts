@@ -5,13 +5,17 @@ import type { Worktree, WorktreeStatus, SetupCommandResult, GitStatus, FileEntry
 
 const MAIN_BRANCH_NAMES = new Set(['main', 'master', 'develop', 'trunk'])
 
-async function git(args: string[], cwd: string): Promise<string> {
+async function git(args: string[], cwd: string, stdin?: string): Promise<string> {
   const env = await getShellEnv()
-  const proc = Bun.spawn(['git', ...args], { cwd, stdout: 'pipe', stderr: 'pipe', env })
-  const stdout = await new Response(proc.stdout).text()
+  const spawnOpts: Record<string, unknown> = { cwd, stdout: 'pipe', stderr: 'pipe', env }
+  if (stdin !== undefined) {
+    spawnOpts.stdin = new Blob([stdin])
+  }
+  const proc = Bun.spawn(['git', ...args], spawnOpts)
+  const stdout = await new Response(proc.stdout as ReadableStream).text()
   const exitCode = await proc.exited
   if (exitCode !== 0) {
-    const stderr = await new Response(proc.stderr).text()
+    const stderr = await new Response(proc.stderr as ReadableStream).text()
     throw new Error(stderr.trim() || `git ${args[0]} exited with code ${exitCode}`)
   }
   return stdout
@@ -349,8 +353,39 @@ export async function getFileDiff(worktreePath: string, filePath: string, staged
   }
 }
 
+/**
+ * Stage files using git update-index (like GitHub Desktop).
+ * Unlike `git add`, update-index correctly handles deleted files,
+ * renames, and paths with special characters via NUL-delimited stdin.
+ */
 export async function stageFiles(worktreePath: string, filePaths: string[]): Promise<void> {
-  await git(['add', '--', ...filePaths], worktreePath)
+  if (filePaths.length === 0) return
+
+  // Step 1: Update index for all paths (new, modified, renamed destinations, deletions)
+  await git(
+    ['update-index', '--add', '--remove', '--replace', '-z', '--stdin'],
+    worktreePath,
+    filePaths.join('\0'),
+  )
+
+  // Step 2: Force-remove files deleted from the working tree.
+  // update-index --remove handles most deletions, but --force-remove
+  // is needed for edge cases (e.g. file replaced by directory).
+  const deletedPaths: string[] = []
+  for (const fp of filePaths) {
+    const fullPath = path.join(worktreePath, fp)
+    if (!await Bun.file(fullPath).exists()) {
+      deletedPaths.push(fp)
+    }
+  }
+
+  if (deletedPaths.length > 0) {
+    await git(
+      ['update-index', '--force-remove', '-z', '--stdin'],
+      worktreePath,
+      deletedPaths.join('\0'),
+    )
+  }
 }
 
 export async function unstageFiles(worktreePath: string, filePaths: string[]): Promise<void> {

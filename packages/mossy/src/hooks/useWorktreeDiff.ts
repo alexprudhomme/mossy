@@ -10,6 +10,8 @@ export function useWorktreeDiff(worktreePath: string | null) {
   const [loading, setLoading] = useState(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const diffRequestId = useRef(0)
+  // Suppress auto-refresh while a stage/unstage/commit is in flight
+  const mutatingRef = useRef(false)
 
   const refresh = useCallback(async () => {
     if (!worktreePath) {
@@ -41,7 +43,9 @@ export function useWorktreeDiff(worktreePath: string | null) {
     refresh()
     if (intervalRef.current) clearInterval(intervalRef.current)
     if (worktreePath) {
-      intervalRef.current = setInterval(refresh, 2000)
+      intervalRef.current = setInterval(() => {
+        if (!mutatingRef.current) refresh()
+      }, 2000)
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
@@ -72,25 +76,40 @@ export function useWorktreeDiff(worktreePath: string | null) {
 
   const stage = useCallback(async (filePaths: string[]) => {
     if (!worktreePath) return
-    await rpc().request['git:stage']({ worktreePath, filePaths })
-    await refresh()
+    mutatingRef.current = true
+    try {
+      await rpc().request['git:stage']({ worktreePath, filePaths })
+      await refresh()
+    } finally {
+      mutatingRef.current = false
+    }
   }, [worktreePath, refresh])
 
   const unstage = useCallback(async (filePaths: string[]) => {
     if (!worktreePath) return
-    await rpc().request['git:unstage']({ worktreePath, filePaths })
-    await refresh()
+    mutatingRef.current = true
+    try {
+      await rpc().request['git:unstage']({ worktreePath, filePaths })
+      await refresh()
+    } finally {
+      mutatingRef.current = false
+    }
   }, [worktreePath, refresh])
 
   const commit = useCallback(async (summary: string, description?: string): Promise<GitResult> => {
     if (!worktreePath) return { success: false, error: 'No worktree path' }
-    const result = await rpc().request['git:commit']({ worktreePath, summary, description })
-    if (result.success) {
-      await refresh()
-      setSelectedFile(null)
-      setDiffText('')
+    mutatingRef.current = true
+    try {
+      const result = await rpc().request['git:commit']({ worktreePath, summary, description })
+      if (result.success) {
+        await refresh()
+        setSelectedFile(null)
+        setDiffText('')
+      }
+      return result
+    } finally {
+      mutatingRef.current = false
     }
-    return result
   }, [worktreePath, refresh])
 
   const push = useCallback(async (): Promise<GitResult> => {
