@@ -1,5 +1,19 @@
 # mossy
 
+## 0.5.0
+
+### Minor Changes
+
+- 792f2f2: Move the main repo branch out of the worktree list and into the project header. The repo header now displays the current branch name alongside VSCode and Ghostty launch buttons, keeping the worktree list focused on feature branches only.
+- 53ae14a: Add ability to mark worktrees as "not ready" — a toggle button on each worktree card dims the card and shows a yellow "not ready" badge, persisted in config.
+
+### Patch Changes
+
+- 0e82ff6: Add blue hover color to VS Code launch icon, matching the hover color pattern used by other IDE icons.
+- 299c432: Differentiate draft PRs from open PRs by color. Open PRs now use emerald (green) and draft PRs use slate (gray), making it easy to tell them apart at a glance.
+- 2383f65: Make the 'Approved' review badge a rainbow-animated sparkly pill instead of plain green.
+- 51421c6: Redesign worktree card status badges: Jira label now shows only the ticket key in blue, review badge only appears when PR is approved, and badge ordering is Dirty (left) → Review → PR → Conflicts → Jira (right).
+
 ## 0.4.0
 
 ### Minor Changes
