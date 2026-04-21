@@ -185,12 +185,13 @@ function FileList({
     (e: ChangeEvent<HTMLInputElement>) => {
       e.stopPropagation()
       if (allStaged) {
-        onUnstage(allFiles.map((f) => f.path))
+        onUnstage(staged.map((f) => f.path))
       } else {
-        onStage(allFiles.map((f) => f.path))
+        const toStage = [...unstaged, ...untracked].map((f) => f.path)
+        if (toStage.length > 0) onStage(toStage)
       }
     },
-    [allStaged, allFiles, onStage, onUnstage],
+    [allStaged, staged, unstaged, untracked, onStage, onUnstage],
   )
 
   return (

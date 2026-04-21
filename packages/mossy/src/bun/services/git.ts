@@ -307,7 +307,12 @@ export async function getGitStatus(worktreePath: string): Promise<GitStatus> {
   for (const line of stdout.split('\n').filter(Boolean)) {
     const index = line[0]
     const workdir = line[1]
-    const filePath = line.slice(3)
+    let filePath = line.slice(3)
+
+    // Renamed/copied entries use "old_path -> new_path" format
+    if ((index === 'R' || index === 'C' || workdir === 'R' || workdir === 'C') && filePath.includes(' -> ')) {
+      filePath = filePath.slice(filePath.indexOf(' -> ') + 4)
+    }
 
     if (index === '?' && workdir === '?') {
       untracked.push({ path: filePath, status: 'untracked' })
