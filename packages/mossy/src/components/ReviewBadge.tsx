@@ -11,10 +11,13 @@ export function ReviewBadge({ pr }: ReviewBadgeProps) {
   return (
     <span
       title="Approved"
-      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border cursor-default bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+      className="rainbow-approved-pill relative inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border cursor-default"
     >
-      <IconUserCheck size={12} />
-      Approved
+      <span className="sparkle" aria-hidden>✦</span>
+      <span className="sparkle" aria-hidden>✦</span>
+      <span className="sparkle" aria-hidden>✦</span>
+      <IconUserCheck size={12} className="rainbow-text" />
+      <span className="rainbow-text">Approved</span>
     </span>
   )
 }
