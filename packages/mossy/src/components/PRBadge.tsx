@@ -20,7 +20,8 @@ const CI_COLORS: Record<string, string> = {
 }
 
 const STATE_COLORS: Record<string, string> = {
-  OPEN: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
+  OPEN: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  DRAFT: 'bg-slate-500/15 text-slate-400 border-slate-500/30',
   CLOSED: 'bg-pink-500/15 text-pink-400 border-pink-500/30',
   MERGED: 'bg-violet-500/15 text-violet-400 border-violet-500/30',
   MERGE_QUEUE: 'bg-amber-500/15 text-amber-400 border-amber-500/30'
@@ -62,8 +63,8 @@ export function PRBadge({ pr, loading }: PRBadgeProps) {
     )
   }
 
-  const displayState = pr.isInMergeQueue ? 'MERGE_QUEUE' : pr.state
-  const stateLabel = pr.isInMergeQueue ? 'merge queue' : pr.state.toLowerCase()
+  const displayState = pr.isInMergeQueue ? 'MERGE_QUEUE' : pr.isDraft ? 'DRAFT' : pr.state
+  const stateLabel = pr.isInMergeQueue ? 'merge queue' : pr.isDraft ? 'draft' : pr.state.toLowerCase()
   const StateIcon = pr.isInMergeQueue ? IconGitMerge : IconGitPullRequest
 
   return (
@@ -78,7 +79,6 @@ export function PRBadge({ pr, loading }: PRBadgeProps) {
       >
         <StateIcon size={12} />
         #{pr.number} {stateLabel}
-        {pr.isDraft ? ' (draft)' : ''}
       </button>
 
       {pr.ciStatus && (
