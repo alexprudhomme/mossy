@@ -25,6 +25,7 @@ const DEFAULT_CONFIG: AppConfig = {
   dismissedDependencyWarning: false,
   zoomLevel: 1,
   worktreeOrder: {},
+  notReadyWorktrees: [],
 }
 
 // Mock diffs keyed by file path for realistic testing

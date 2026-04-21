@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
-import { IconGitBranch, IconTrash, IconChevronDown, IconChevronRight, IconGripVertical } from '@tabler/icons-react'
+import { IconGitBranch, IconTrash, IconChevronDown, IconChevronRight, IconGripVertical, IconClockPause } from '@tabler/icons-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '../lib/utils'
@@ -28,6 +28,8 @@ interface WorktreeCardProps {
   issueTracker: IssueTracker
   deleting?: boolean
   settingUp?: boolean
+  notReady?: boolean
+  onToggleNotReady?: () => void
   onConfirmDelete: (force: boolean) => void
 }
 
@@ -62,7 +64,7 @@ function extractIssueKeyFromPRBody(body: string | null | undefined, tracker: Iss
 
 export function WorktreeCard({
   worktree, repoPath, pollIntervalSec, refreshKey, defaultIde, issueTracker,
-  deleting, settingUp, onConfirmDelete
+  deleting, settingUp, notReady, onToggleNotReady, onConfirmDelete
 }: WorktreeCardProps) {
   const [deleteOpened, setDeleteOpened] = useState(false)
   const [hovered, setHovered] = useState(false)
@@ -97,9 +99,13 @@ export function WorktreeCard({
           ? 'opacity-40'
           : deleting
             ? 'border-border/50 bg-card/50 opacity-45 pointer-events-none'
-            : hovered
-              ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
-              : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
+            : notReady
+              ? hovered
+                ? 'border-yellow-500/30 bg-gradient-to-br from-yellow-500/[0.06] to-yellow-500/[0.02] opacity-60'
+                : 'border-yellow-500/20 bg-gradient-to-br from-yellow-500/[0.03] to-transparent opacity-55'
+              : hovered
+                ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
+                : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
       )}
       style={{
         transform: CSS.Transform.toString(transform),
@@ -136,6 +142,11 @@ export function WorktreeCard({
                     main
                   </span>
                 )}
+                {notReady && (
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 shrink-0">
+                    not ready
+                  </span>
+                )}
               </div>
               <span className="text-xs text-muted-foreground truncate block">
                 {shortenPath(worktree.path)}
@@ -166,6 +177,20 @@ export function WorktreeCard({
 
               <div className="flex items-center gap-1 shrink-0">
                 <LaunchButtons worktreePath={worktree.path} defaultIde={defaultIde} />
+                {!worktree.isMain && (
+                  <button
+                    title={notReady ? 'Mark as ready' : 'Mark as not ready'}
+                    onClick={onToggleNotReady}
+                    className={cn(
+                      'p-1 rounded-md transition-colors',
+                      notReady
+                        ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                        : 'text-muted-foreground hover:bg-yellow-500/20 hover:text-yellow-400'
+                    )}
+                  >
+                    <IconClockPause size={16} />
+                  </button>
+                )}
                 {!worktree.isMain && (
                   <button
                     title="Delete worktree"

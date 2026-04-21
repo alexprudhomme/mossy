@@ -31,7 +31,7 @@ export default function App() {
     setUpdateCheckInterval, reorderRepos, reorderWorktrees, setDefaultIde,
     setRepoSetupCommands, setIssuePanelOpen, setIssuePanelWidth,
     setWorktreeBasePath, setIssueTracker, setFetchInterval,
-    setDismissedDependencyWarning, setZoomLevel
+    setDismissedDependencyWarning, setZoomLevel, toggleNotReady
   } = useConfig()
   const [settingsOpened, setSettingsOpened] = useState(false)
   const [dependencyStatus, setDependencyStatus] = useState<DependencyStatus | null>(null)
@@ -236,6 +236,8 @@ export default function App() {
                 defaultIde={config.defaultIde}
                 issueTracker={config.issueTracker}
                 worktreeOrder={config.worktreeOrder}
+                notReadyWorktrees={config.notReadyWorktrees}
+                onToggleNotReady={toggleNotReady}
                 onReorder={(repos) => { setOrderedRepos(repos); void reorderRepos(repos) }}
                 onReorderWorktrees={reorderWorktrees}
                 isDraggingIssue={isDraggingIssue}
