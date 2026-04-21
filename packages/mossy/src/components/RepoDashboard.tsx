@@ -137,10 +137,14 @@ function RepoSection({
           >
             <IconGripVertical size={14} />
           </button>
-          <button className="p-0.5 rounded-md text-[#484f58] hover:text-muted-foreground transition-colors" onClick={onToggleCollapse}>
-            {isCollapsed ? <IconChevronRight size={14} /> : <IconChevronDown size={14} />}
-          </button>
-          <span className="text-base font-semibold font-mono text-foreground cursor-pointer" onClick={onToggleCollapse}>
+          {orderedWorktrees.length > 0 ? (
+            <button className="p-0.5 rounded-md text-[#484f58] hover:text-muted-foreground transition-colors" onClick={onToggleCollapse}>
+              {isCollapsed ? <IconChevronRight size={14} /> : <IconChevronDown size={14} />}
+            </button>
+          ) : (
+            <span className="p-0.5 inline-flex w-[18px]" />
+          )}
+          <span className={cn("text-base font-semibold font-mono text-foreground", orderedWorktrees.length > 0 && "cursor-pointer")} onClick={orderedWorktrees.length > 0 ? onToggleCollapse : undefined}>
             {repo.name}
           </span>
           <span className="text-xs text-[#484f58] truncate">{shortenPath(repo.path)}</span>
