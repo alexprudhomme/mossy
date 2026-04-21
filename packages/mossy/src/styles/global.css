@@ -72,6 +72,90 @@
   -webkit-app-region: no-drag;
 }
 
+/* Rainbow approved pill animations */
+@keyframes rainbow-border {
+  0% { border-color: #f87171; }
+  14% { border-color: #fb923c; }
+  28% { border-color: #facc15; }
+  42% { border-color: #4ade80; }
+  57% { border-color: #38bdf8; }
+  71% { border-color: #818cf8; }
+  85% { border-color: #c084fc; }
+  100% { border-color: #f87171; }
+}
+
+@keyframes rainbow-text {
+  0% { color: #f87171; }
+  14% { color: #fb923c; }
+  28% { color: #facc15; }
+  42% { color: #4ade80; }
+  57% { color: #38bdf8; }
+  71% { color: #818cf8; }
+  85% { color: #c084fc; }
+  100% { color: #f87171; }
+}
+
+@keyframes rainbow-bg {
+  0% { background-color: rgba(248, 113, 113, 0.12); }
+  14% { background-color: rgba(251, 146, 60, 0.12); }
+  28% { background-color: rgba(250, 204, 21, 0.12); }
+  42% { background-color: rgba(74, 222, 128, 0.12); }
+  57% { background-color: rgba(56, 189, 248, 0.12); }
+  71% { background-color: rgba(129, 140, 248, 0.12); }
+  85% { background-color: rgba(192, 132, 252, 0.12); }
+  100% { background-color: rgba(248, 113, 113, 0.12); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+@keyframes sparkle-drift {
+  0% { opacity: 0; transform: scale(0) translate(0, 0) rotate(0deg); }
+  30% { opacity: 1; transform: scale(1) translate(2px, -3px) rotate(120deg); }
+  70% { opacity: 0.7; transform: scale(0.8) translate(-1px, -5px) rotate(240deg); }
+  100% { opacity: 0; transform: scale(0) translate(1px, -7px) rotate(360deg); }
+}
+
+.rainbow-approved-pill {
+  animation: rainbow-border 3s linear infinite, rainbow-bg 3s linear infinite, float 2s ease-in-out infinite;
+}
+
+.rainbow-approved-pill .rainbow-text {
+  animation: rainbow-text 3s linear infinite;
+}
+
+.rainbow-approved-pill .sparkle {
+  position: absolute;
+  pointer-events: none;
+  font-size: 8px;
+  animation: sparkle-drift 1.8s ease-in-out infinite;
+}
+
+.rainbow-approved-pill .sparkle:nth-child(1) {
+  top: -4px;
+  right: -2px;
+  animation-delay: 0s;
+}
+
+.rainbow-approved-pill .sparkle:nth-child(2) {
+  bottom: -3px;
+  left: 4px;
+  animation-delay: 0.6s;
+}
+
+.rainbow-approved-pill .sparkle:nth-child(3) {
+  top: -2px;
+  left: 12px;
+  animation-delay: 1.2s;
+}
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
