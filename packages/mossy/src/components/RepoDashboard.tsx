@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   IconRefresh, IconPlus, IconChevronDown, IconChevronRight, IconGripVertical,
-  IconAlertCircle, IconCheck, IconX
+  IconAlertCircle, IconCheck, IconX, IconGitBranch
 } from '@tabler/icons-react'
 import {
   DndContext,
@@ -14,6 +14,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } 
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '../lib/utils'
 import { WorktreeCard } from './WorktreeCard'
+import { LaunchButtons } from './LaunchButtons'
 import { AddWorktreeModal } from './AddWorktreeModal'
 import { useWorktrees } from '../hooks/useWorktrees'
 import { useCollapsed } from '../hooks/useCollapsed'
@@ -56,17 +57,21 @@ function RepoSection({
   const handleFetched = useCallback(() => setRefreshKey((k) => k + 1), [])
   useFetchRepo(repo.path, fetchIntervalSec, handleFetched)
 
-  // Derive ordered worktrees: saved order first, then any new ones at end
+  // Separate root worktree (the repo itself) from feature worktrees
+  const rootWorktree = useMemo(() => worktrees.find((wt) => wt.path === repo.path), [worktrees, repo.path])
+  const featureWorktrees = useMemo(() => worktrees.filter((wt) => wt.path !== repo.path), [worktrees, repo.path])
+
+  // Derive ordered feature worktrees: saved order first, then any new ones at end
   const derivedWorktrees = useMemo(() => {
-    if (savedWorktreeOrder.length === 0) return worktrees
+    if (savedWorktreeOrder.length === 0) return featureWorktrees
     const orderMap = new Map(savedWorktreeOrder.map((p, i) => [p, i]))
-    const sorted = [...worktrees].sort((a, b) => {
+    const sorted = [...featureWorktrees].sort((a, b) => {
       const ai = orderMap.get(a.path) ?? Number.MAX_SAFE_INTEGER
       const bi = orderMap.get(b.path) ?? Number.MAX_SAFE_INTEGER
       return ai - bi
     })
     return sorted
-  }, [worktrees, savedWorktreeOrder])
+  }, [featureWorktrees, savedWorktreeOrder])
 
   // Optimistic local state — prevents snap-back flicker during async config save
   const [orderedWorktrees, setOrderedWorktrees] = useState<Worktree[]>(derivedWorktrees)
@@ -124,7 +129,7 @@ function RepoSection({
       }}
     >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 min-w-0">
           <button
             className="p-0.5 rounded-md text-[#484f58] hover:text-muted-foreground cursor-grab touch-none transition-colors"
             {...attributes}
@@ -138,7 +143,15 @@ function RepoSection({
           <span className="text-base font-semibold font-mono text-foreground cursor-pointer" onClick={onToggleCollapse}>
             {repo.name}
           </span>
-          <span className="text-xs text-[#484f58]">{shortenPath(repo.path)}</span>
+          <span className="text-xs text-[#484f58] truncate">{shortenPath(repo.path)}</span>
+          {rootWorktree && (
+            <>
+              <span className="text-[#484f58] mx-0.5">·</span>
+              <IconGitBranch size={14} className="text-primary shrink-0" />
+              <span className="text-xs font-mono text-muted-foreground truncate">{rootWorktree.branch}</span>
+              <LaunchButtons worktreePath={rootWorktree.path} defaultIde={defaultIde} />
+            </>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <button className="p-1 rounded-md text-primary hover:bg-primary/10 transition-colors" onClick={() => setAddOpened(true)}>
