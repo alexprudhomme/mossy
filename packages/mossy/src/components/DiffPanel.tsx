@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef, type ChangeEvent } from 'react'
 import { cn } from '../lib/utils'
 import { useWorktreeDiff } from '../hooks/useWorktreeDiff'
 import { parseDiff, type DiffLine } from '../lib/diff-parser'
@@ -172,11 +172,42 @@ function FileList({
       .map((f) => ({ ...f, isStaged: false })),
   ]
 
+  const allStaged = allFiles.length > 0 && allFiles.every((f) => f.isStaged)
+  const noneStaged = allFiles.every((f) => !f.isStaged)
+  const selectAllRef = useCallback(
+    (el: HTMLInputElement | null) => {
+      if (el) el.indeterminate = !allStaged && !noneStaged
+    },
+    [allStaged, noneStaged],
+  )
+
+  const handleToggleAll = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      e.stopPropagation()
+      if (allStaged) {
+        onUnstage(allFiles.map((f) => f.path))
+      } else {
+        onStage(allFiles.map((f) => f.path))
+      }
+    },
+    [allStaged, allFiles, onStage, onUnstage],
+  )
+
   return (
     <div className="flex h-full w-[220px] min-w-[220px] flex-col border-r border-border overflow-y-auto">
       <div className="px-2 pt-2 pb-1">
-        <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          <span>Changes</span>
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {allFiles.length > 0 && (
+            <input
+              ref={selectAllRef}
+              type="checkbox"
+              checked={allStaged}
+              onChange={handleToggleAll}
+              className="h-3 w-3 rounded border-border bg-transparent accent-primary cursor-pointer"
+              title={allStaged ? 'Unstage all' : 'Stage all'}
+            />
+          )}
+          <span className="flex-1">Changes</span>
           <span className="text-[#484f58]">{allFiles.length}</span>
         </div>
       </div>
