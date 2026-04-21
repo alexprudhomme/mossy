@@ -82,6 +82,18 @@ export function useWorktreeDiff(worktreePath: string | null) {
     await refresh()
   }, [worktreePath, refresh])
 
+  const discard = useCallback(async (filePaths: string[]) => {
+    if (!worktreePath) return
+    await rpc().request['git:discard']({ worktreePath, filePaths })
+    setSelectedFile((prev) =>
+      prev && filePaths.includes(prev.path) ? null : prev,
+    )
+    setDiffText((prev) =>
+      filePaths.includes(selectedFile?.path ?? '') ? '' : prev,
+    )
+    await refresh()
+  }, [worktreePath, refresh, selectedFile])
+
   const commit = useCallback(async (summary: string, description?: string): Promise<GitResult> => {
     if (!worktreePath) return { success: false, error: 'No worktree path' }
     const result = await rpc().request['git:commit']({ worktreePath, summary, description })
@@ -102,6 +114,6 @@ export function useWorktreeDiff(worktreePath: string | null) {
 
   return {
     gitStatus, branchInfo, selectedFile, diffText, loading,
-    loadDiff, stage, unstage, commit, push, refresh, setSelectedFile
+    loadDiff, stage, unstage, discard, commit, push, refresh, setSelectedFile
   }
 }

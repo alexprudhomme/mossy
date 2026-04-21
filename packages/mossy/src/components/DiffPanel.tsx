@@ -4,6 +4,62 @@ import { useWorktreeDiff } from '../hooks/useWorktreeDiff'
 import { parseDiff, type DiffLine } from '../lib/diff-parser'
 import type { FileEntry } from '../shared/types'
 
+// ─── Context Menu ────────────────────────────────────────────────────────────
+
+interface ContextMenuState {
+  x: number
+  y: number
+  filePath: string
+}
+
+function ContextMenu({
+  x,
+  y,
+  onDiscard,
+  onClose,
+}: {
+  x: number
+  y: number
+  onDiscard: () => void
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  return (
+    <div
+      ref={ref}
+      className="fixed z-50 min-w-[160px] rounded-md border border-border bg-popover py-1 shadow-lg"
+      style={{ left: x, top: y }}
+    >
+      <button
+        onClick={() => {
+          onDiscard()
+          onClose()
+        }}
+        className="flex w-full items-center px-3 py-1.5 text-xs text-destructive hover:bg-accent cursor-pointer"
+      >
+        Discard Changes
+      </button>
+    </div>
+  )
+}
+
 // ─── Status helpers ──────────────────────────────────────────────────────────
 
 const STATUS_LETTER: Record<FileEntry['status'], string> = {
@@ -104,12 +160,14 @@ function FileItem({
   isSelected,
   onSelect,
   onToggleStage,
+  onContextMenu,
 }: {
   file: FileEntry
   isStaged: boolean
   isSelected: boolean
   onSelect: () => void
   onToggleStage: () => void
+  onContextMenu: (e: React.MouseEvent) => void
 }) {
   const fileName = file.path.split('/').pop() || file.path
   const dir = file.path.includes('/') ? file.path.slice(0, file.path.lastIndexOf('/')) : ''
@@ -121,6 +179,7 @@ function FileItem({
         isSelected ? 'bg-[#1f6feb33]' : 'hover:bg-accent',
       )}
       onClick={onSelect}
+      onContextMenu={onContextMenu}
     >
       <input
         type="checkbox"
@@ -153,6 +212,7 @@ function FileList({
   onSelectFile,
   onStage,
   onUnstage,
+  onDiscard,
 }: {
   staged: FileEntry[]
   unstaged: FileEntry[]
@@ -161,6 +221,7 @@ function FileList({
   onSelectFile: (path: string, isStaged: boolean) => void
   onStage: (paths: string[]) => void
   onUnstage: (paths: string[]) => void
+  onDiscard: (paths: string[]) => void
 }) {
   // Merge all files into a single list. A file may appear in both staged and
   // unstaged (partially staged); we deduplicate by path, preferring the staged entry.
@@ -193,8 +254,26 @@ function FileList({
     [allStaged, allFiles, onStage, onUnstage],
   )
 
+  const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null)
+
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent, filePath: string) => {
+      e.preventDefault()
+      setCtxMenu({ x: e.clientX, y: e.clientY, filePath })
+    },
+    [],
+  )
+
   return (
     <div className="flex h-full w-[220px] min-w-[220px] flex-col border-r border-border overflow-y-auto">
+      {ctxMenu && (
+        <ContextMenu
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          onDiscard={() => onDiscard([ctxMenu.filePath])}
+          onClose={() => setCtxMenu(null)}
+        />
+      )}
       <div className="px-2 pt-2 pb-1">
         <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {allFiles.length > 0 && (
@@ -222,6 +301,7 @@ function FileList({
             isSelected={selectedFile?.path === f.path}
             onSelect={() => onSelectFile(f.path, f.isStaged)}
             onToggleStage={() => f.isStaged ? onUnstage([f.path]) : onStage([f.path])}
+            onContextMenu={(e) => handleContextMenu(e, f.path)}
           />
         ))
       )}
@@ -429,6 +509,7 @@ export function DiffPanel({ worktreePath, className }: DiffPanelProps) {
     loadDiff,
     stage,
     unstage,
+    discard,
     commit,
     push,
   } = useWorktreeDiff(worktreePath)
@@ -479,6 +560,17 @@ export function DiffPanel({ worktreePath, className }: DiffPanelProps) {
     [unstage],
   )
 
+  const handleDiscard = useCallback(
+    async (paths: string[]) => {
+      await discard(paths)
+      showToast(
+        paths.length === 1 ? 'Changes discarded' : `Discarded ${paths.length} files`,
+        'success',
+      )
+    },
+    [discard, showToast],
+  )
+
   const staged = gitStatus?.staged ?? []
   const unstaged_ = gitStatus?.unstaged ?? []
   const untracked = gitStatus?.untracked ?? []
@@ -512,6 +604,7 @@ export function DiffPanel({ worktreePath, className }: DiffPanelProps) {
               onSelectFile={handleSelectFile}
               onStage={handleStage}
               onUnstage={handleUnstage}
+              onDiscard={handleDiscard}
             />
             <DiffViewer diffText={diffText} loading={loading} />
           </div>

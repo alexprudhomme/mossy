@@ -352,6 +352,32 @@ export async function unstageFiles(worktreePath: string, filePaths: string[]): P
   await git(['reset', 'HEAD', '--', ...filePaths], worktreePath)
 }
 
+export async function discardFiles(worktreePath: string, filePaths: string[]): Promise<void> {
+  if (filePaths.length === 0) return
+
+  // Get status to know which files are untracked vs tracked
+  const status = await getGitStatus(worktreePath)
+  const untrackedPaths = new Set([
+    ...status.untracked.map((f) => f.path),
+    ...status.staged.filter((f) => f.status === 'added').map((f) => f.path),
+  ])
+
+  const tracked = filePaths.filter((p) => !untrackedPaths.has(p))
+  const untracked = filePaths.filter((p) => untrackedPaths.has(p))
+
+  // Tracked files: restore from HEAD (handles both staged and unstaged)
+  if (tracked.length > 0) {
+    await git(['checkout', 'HEAD', '--', ...tracked], worktreePath)
+  }
+
+  // Untracked / newly added files: remove from worktree and index
+  if (untracked.length > 0) {
+    // Unstage first if any were staged
+    try { await git(['reset', 'HEAD', '--', ...untracked], worktreePath) } catch { /* may not be staged */ }
+    await git(['clean', '-fd', '--', ...untracked], worktreePath)
+  }
+}
+
 export async function commitChanges(worktreePath: string, summary: string, description?: string): Promise<GitResult> {
   try {
     const message = description ? `${summary}\n\n${description}` : summary

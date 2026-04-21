@@ -95,6 +95,10 @@ export type MossyRPC = {
         params: { worktreePath: string; filePaths: string[] }
         response: void
       }
+      'git:discard': {
+        params: { worktreePath: string; filePaths: string[] }
+        response: void
+      }
       'git:commit': {
         params: { worktreePath: string; summary: string; description?: string }
         response: GitResult

@@ -174,6 +174,11 @@ const stubRpc = new Proxy({}, {
           if (payload?.filePaths) mockUnstage(payload.filePaths)
           return
         }
+        case 'git:discard': {
+          const payload = args[0] as { filePaths?: string[] } | undefined
+          if (payload?.filePaths) mockUnstage(payload.filePaths)
+          return
+        }
         case 'git:commit': return { success: true }
         case 'git:push': return { success: true }
         case 'git:branchInfo': return { name: 'feature/diff-panel', ahead: 2, behind: 0, hasUpstream: true }

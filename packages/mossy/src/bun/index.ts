@@ -19,6 +19,7 @@ import {
   getFileDiff,
   stageFiles,
   unstageFiles,
+  discardFiles,
   commitChanges,
   pushChanges,
   getBranchInfo,
@@ -220,6 +221,9 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
       },
       'git:unstage': async ({ worktreePath, filePaths }) => {
         return unstageFiles(worktreePath, filePaths)
+      },
+      'git:discard': async ({ worktreePath, filePaths }) => {
+        return discardFiles(worktreePath, filePaths)
       },
       'git:commit': async ({ worktreePath, summary, description }) => {
         return commitChanges(worktreePath, summary, description)
