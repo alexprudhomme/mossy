@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { cn } from '../lib/utils'
 import { IssueBadge } from './IssueBadge'
 import { PRBadge } from './PRBadge'
+import { ReviewBadge } from './ReviewBadge'
 import { ConflictsBadge } from './ConflictsBadge'
 import { DirtyBadge } from './DirtyBadge'
 import { LaunchButtons } from './LaunchButtons'
@@ -156,10 +157,11 @@ export function WorktreeCard({
                     Setting up…
                   </span>
                 )}
-                <IssueBadge issueKey={issueKey} issue={issue} loading={issueLoading} issueTracker={issueTracker} />
+                <ReviewBadge pr={pr} />
                 <PRBadge pr={pr} loading={prLoading} />
                 <ConflictsBadge conflicts={conflicts} loading={conflictsLoading} />
                 <DirtyBadge status={wtStatus} loading={wtStatusLoading} worktreePath={worktree.path} onPullComplete={refreshStatus} />
+                <IssueBadge issueKey={issueKey} issue={issue} loading={issueLoading} issueTracker={issueTracker} />
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
