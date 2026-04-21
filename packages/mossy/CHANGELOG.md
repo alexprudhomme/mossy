@@ -1,5 +1,11 @@
 # mossy
 
+## 0.5.1
+
+### Patch Changes
+
+- e4ec3b2: Hide the collapse/expand arrow for projects with zero worktrees, since clicking it had no effect.
+
 ## 0.5.0
 
 ### Minor Changes

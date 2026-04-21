@@ -1,6 +1,6 @@
 {
   "name": "mossy",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Git worktree management dashboard with inline diff viewer.",
   "repository": {
     "type": "git",
