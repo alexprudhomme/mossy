@@ -38,12 +38,14 @@ interface RepoSectionProps {
   onIssueDropBranchClear: () => void
   savedWorktreeOrder: string[]
   onReorderWorktrees: (repoId: string, worktreePaths: string[]) => void
+  notReadyWorktrees: string[]
+  onToggleNotReady: (worktreePath: string) => void
 }
 
 function RepoSection({
   repo, pollIntervalSec, fetchIntervalSec, defaultIde, issueTracker,
   isCollapsed, onToggleCollapse, isDropTarget, isOver, issueDropBranch, onIssueDropBranchClear,
-  savedWorktreeOrder, onReorderWorktrees
+  savedWorktreeOrder, onReorderWorktrees, notReadyWorktrees, onToggleNotReady
 }: RepoSectionProps) {
   const { worktrees, loading, error, deleteError, deletingPaths, startDelete, clearDeleteError, settingUpPaths, setupError, startSetup, clearSetupError, refresh } = useWorktrees(repo.path, pollIntervalSec)
   const [addOpened, setAddOpened] = useState(false)
@@ -210,6 +212,8 @@ function RepoSection({
                       issueTracker={issueTracker}
                       deleting={deletingPaths.has(wt.path)}
                       settingUp={settingUpPaths.has(wt.path)}
+                      notReady={notReadyWorktrees.includes(wt.path)}
+                      onToggleNotReady={() => onToggleNotReady(wt.path)}
                       onConfirmDelete={(force) => startDelete(wt.path, force)}
                     />
                   ))}
@@ -232,6 +236,8 @@ interface RepoDashboardProps {
   defaultIde: IdeId
   issueTracker: IssueTracker
   worktreeOrder: Record<string, string[]>
+  notReadyWorktrees: string[]
+  onToggleNotReady: (worktreePath: string) => void
   onReorder: (repos: RepoConfig[]) => void
   onReorderWorktrees: (repoId: string, worktreePaths: string[]) => void
   isDraggingIssue: boolean
@@ -242,7 +248,8 @@ interface RepoDashboardProps {
 
 export function RepoDashboard({
   repos, pollIntervalSec, fetchIntervalSec, defaultIde, issueTracker,
-  worktreeOrder, onReorder, onReorderWorktrees, isDraggingIssue, overRepoId, issueDropTargets, onIssueDropBranchClear
+  worktreeOrder, notReadyWorktrees, onToggleNotReady, onReorder, onReorderWorktrees,
+  isDraggingIssue, overRepoId, issueDropTargets, onIssueDropBranchClear
 }: RepoDashboardProps) {
   const { collapsed, toggle } = useCollapsed()
   const [orderedRepos, setOrderedRepos] = useState(repos)
@@ -277,6 +284,8 @@ export function RepoDashboard({
             onIssueDropBranchClear={() => onIssueDropBranchClear(repo.id)}
             savedWorktreeOrder={worktreeOrder[repo.id] ?? []}
             onReorderWorktrees={onReorderWorktrees}
+            notReadyWorktrees={notReadyWorktrees}
+            onToggleNotReady={onToggleNotReady}
           />
         ))}
       </div>

@@ -164,6 +164,18 @@ export function useConfig() {
     [config, save]
   )
 
+  const toggleNotReady = useCallback(
+    async (worktreePath: string) => {
+      if (!config) return
+      const current = config.notReadyWorktrees ?? []
+      const next = current.includes(worktreePath)
+        ? current.filter((p) => p !== worktreePath)
+        : [...current, worktreePath]
+      await save({ ...config, notReadyWorktrees: next })
+    },
+    [config, save]
+  )
+
   return {
     config,
     loading,
@@ -183,6 +195,7 @@ export function useConfig() {
     setIssueTracker,
     setWorktreeBasePath,
     setDismissedDependencyWarning,
-    setZoomLevel
+    setZoomLevel,
+    toggleNotReady
   }
 }

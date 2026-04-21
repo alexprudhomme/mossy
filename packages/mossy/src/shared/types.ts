@@ -25,6 +25,7 @@ export interface AppConfig {
   dismissedDependencyWarning: boolean
   zoomLevel: number
   worktreeOrder: Record<string, string[]>
+  notReadyWorktrees: string[]
 }
 
 export interface Worktree {

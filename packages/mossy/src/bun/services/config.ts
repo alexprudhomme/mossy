@@ -34,7 +34,8 @@ const DEFAULTS: AppConfig = {
   issuePanelWidth: 260,
   dismissedDependencyWarning: false,
   zoomLevel: 1,
-  worktreeOrder: {}
+  worktreeOrder: {},
+  notReadyWorktrees: []
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -84,7 +85,10 @@ function sanitizeConfig(config: Partial<AppConfig>): AppConfig {
             ([, v]) => Array.isArray(v) && v.every((p) => typeof p === 'string')
           )
         )
-      : {}
+      : {},
+    notReadyWorktrees: Array.isArray(config.notReadyWorktrees)
+      ? config.notReadyWorktrees.filter((p): p is string => typeof p === 'string')
+      : []
   }
 }
 
