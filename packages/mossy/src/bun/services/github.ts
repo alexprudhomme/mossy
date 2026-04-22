@@ -44,7 +44,7 @@ export async function getPRForBranch(
     const stdout = await gh(
       [
         'pr', 'view', branch,
-        '--json', 'number,url,title,body,state,isDraft,reviewDecision,statusCheckRollup',
+        '--json', 'number,url,title,body,state,isDraft,reviewDecision,statusCheckRollup,latestReviews',
         '-R', ghRepo
       ],
       repoPath
@@ -63,12 +63,32 @@ export async function getPRForBranch(
       state: data.state as PRInfo['state'],
       isDraft: data.isDraft ?? false,
       isInMergeQueue,
-      reviewDecision: data.reviewDecision ?? null,
+      reviewDecision: mapReviewDecision(data.reviewDecision, data.latestReviews),
       ...ci
     }
   } catch {
     return null
   }
+}
+
+const VALID_REVIEW_DECISIONS = new Set(['APPROVED', 'CHANGES_REQUESTED', 'REVIEW_REQUIRED'])
+
+function mapReviewDecision(
+  reviewDecision: string | null | undefined,
+  latestReviews: Array<{ state: string }> | null | undefined
+): PRInfo['reviewDecision'] {
+  // Prefer the branch-protection review decision when available
+  if (reviewDecision && VALID_REVIEW_DECISIONS.has(reviewDecision)) {
+    return reviewDecision as PRInfo['reviewDecision']
+  }
+
+  // Fall back to computing from individual reviews (covers repos without required reviews)
+  if (!latestReviews || latestReviews.length === 0) return null
+
+  if (latestReviews.some((r) => r.state === 'CHANGES_REQUESTED')) return 'CHANGES_REQUESTED'
+  if (latestReviews.some((r) => r.state === 'APPROVED')) return 'APPROVED'
+
+  return null
 }
 
 interface CIResult {
