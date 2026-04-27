@@ -10,6 +10,7 @@ import type {
   MergeConflictInfo,
   PRInfo,
   SetupCommandResult,
+  TerminalId,
   Worktree,
   WorktreeStatus
 } from './types'
@@ -133,8 +134,8 @@ export type MossyRPC = {
         params: { ideId: IdeId; worktreePath: string }
         response: void
       }
-      'launch:ghostty': {
-        params: { worktreePath: string }
+      'launch:terminal': {
+        params: { terminalId: TerminalId; worktreePath: string }
         response: void
       }
       'launch:url': {

@@ -20,6 +20,7 @@ const DEFAULT_CONFIG: AppConfig = {
   updateCheckIntervalMin: 30,
   collapsedRepos: [],
   defaultIde: 'vscode',
+  defaultTerminal: 'ghostty',
   issuePanelOpen: false,
   issuePanelWidth: 260,
   dismissedDependencyWarning: false,

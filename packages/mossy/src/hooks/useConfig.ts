@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { rpc } from '../rpc'
-import type { AppConfig, IdeId, IssueTracker, RepoConfig } from '../shared/types'
+import type { AppConfig, IdeId, IssueTracker, RepoConfig, TerminalId } from '../shared/types'
 
 export function useConfig() {
   const [config, setConfigState] = useState<AppConfig | null>(null)
@@ -89,6 +89,14 @@ export function useConfig() {
     async (ide: IdeId) => {
       if (!config) return
       await save({ ...config, defaultIde: ide })
+    },
+    [config, save]
+  )
+
+  const setDefaultTerminal = useCallback(
+    async (terminal: TerminalId) => {
+      if (!config) return
+      await save({ ...config, defaultTerminal: terminal })
     },
     [config, save]
   )
@@ -188,6 +196,7 @@ export function useConfig() {
     reorderRepos,
     reorderWorktrees,
     setDefaultIde,
+    setDefaultTerminal,
     setRepoSetupCommands,
     setIssuePanelOpen,
     setIssuePanelWidth,

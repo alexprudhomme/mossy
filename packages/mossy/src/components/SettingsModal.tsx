@@ -13,21 +13,25 @@ import {
   IconExternalLink,
   IconAlertCircle,
   IconCircleCheck,
+  IconTerminal2,
 } from '@tabler/icons-react'
 import { cn } from '../lib/utils'
 import { rpc } from '../rpc'
 import { IDE_REGISTRY, IDE_OPTIONS } from '../shared/ide-registry'
+import { TERMINAL_REGISTRY, TERMINAL_OPTIONS } from '../shared/terminal-registry'
 import { IdeIcon } from './IdeIcon'
+import { TerminalIcon } from './TerminalIcon'
 import type {
   AppConfig,
   RepoConfig,
   IdeId,
+  TerminalId,
   IssueTracker,
   DependencyStatus,
   DependencyCheck,
 } from '../shared/types'
 
-type Section = 'general' | 'editor' | 'updates' | 'dependencies'
+type Section = 'general' | 'editor' | 'terminal' | 'updates' | 'dependencies'
 
 interface SettingsModalProps {
   opened: boolean
@@ -40,6 +44,7 @@ interface SettingsModalProps {
   setAutoUpdateEnabled: (enabled: boolean) => Promise<void>
   setUpdateCheckInterval: (minutes: number) => Promise<void>
   setDefaultIde: (ide: IdeId) => Promise<void>
+  setDefaultTerminal: (terminal: TerminalId) => Promise<void>
   setRepoSetupCommands: (repoId: string, commands: string[]) => Promise<void>
   setIssueTracker: (tracker: IssueTracker) => Promise<void>
   setWorktreeBasePath: (path: string) => Promise<void>
@@ -49,6 +54,7 @@ interface SettingsModalProps {
 const NAV_ITEMS: { id: Section; label: string; icon: typeof IconSettings }[] = [
   { id: 'general', label: 'General', icon: IconSettings },
   { id: 'editor', label: 'Editor', icon: IconCode },
+  { id: 'terminal', label: 'Terminal', icon: IconTerminal2 },
   { id: 'updates', label: 'Updates', icon: IconRefresh },
   { id: 'dependencies', label: 'Dependencies', icon: IconPackage },
 ]
@@ -70,6 +76,7 @@ export function SettingsModal({
   setAutoUpdateEnabled,
   setUpdateCheckInterval,
   setDefaultIde,
+  setDefaultTerminal,
   setRepoSetupCommands,
   setIssueTracker,
   setWorktreeBasePath,
@@ -249,6 +256,10 @@ export function SettingsModal({
 
           {section === 'editor' && (
             <EditorSection config={config} onSetDefaultIde={setDefaultIde} />
+          )}
+
+          {section === 'terminal' && (
+            <TerminalSection config={config} onSetDefaultTerminal={setDefaultTerminal} />
           )}
 
           {section === 'updates' && (
@@ -533,6 +544,47 @@ function EditorSection({
               onClick={() => onSetDefaultIde(ide)}
             >
               <IdeIcon ide={ide} size={18} />
+              <span className="text-sm font-medium flex-1">{def.label}</span>
+              {selected && <IconCheck size={14} className="text-primary" />}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Terminal Section                                                    */
+/* ------------------------------------------------------------------ */
+
+function TerminalSection({
+  config,
+  onSetDefaultTerminal,
+}: {
+  config: AppConfig
+  onSetDefaultTerminal: (terminal: TerminalId) => Promise<void>
+}) {
+  return (
+    <div>
+      <SectionHeading>Default Terminal</SectionHeading>
+      <p className="text-xs text-[#484f58] mb-4">Choose which terminal opens when you click the terminal button.</p>
+      <div className="flex flex-col gap-0.5">
+        {TERMINAL_OPTIONS.map((terminal) => {
+          const def = TERMINAL_REGISTRY[terminal]
+          const selected = config.defaultTerminal === terminal
+          return (
+            <button
+              key={terminal}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors',
+                selected
+                  ? 'bg-secondary text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+              )}
+              onClick={() => onSetDefaultTerminal(terminal)}
+            >
+              <TerminalIcon terminal={terminal} size={18} />
               <span className="text-sm font-medium flex-1">{def.label}</span>
               {selected && <IconCheck size={14} className="text-primary" />}
             </button>

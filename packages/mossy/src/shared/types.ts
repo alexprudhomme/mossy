@@ -1,6 +1,7 @@
 // Shared types used across bun and view processes
 
 export type IdeId = 'vscode' | 'cursor' | 'intellij' | 'webstorm' | 'zed' | 'sublime'
+export type TerminalId = 'ghostty' | 'iterm2' | 'terminal'
 export type IssueTracker = 'jira' | 'github' | 'none'
 
 export interface RepoConfig {
@@ -20,6 +21,7 @@ export interface AppConfig {
   updateCheckIntervalMin: number
   collapsedRepos: string[]
   defaultIde: IdeId
+  defaultTerminal: TerminalId
   issuePanelOpen: boolean
   issuePanelWidth: number
   dismissedDependencyWarning: boolean

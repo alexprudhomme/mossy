@@ -17,7 +17,7 @@ import { useWorktreeStatus } from '../hooks/useWorktreeStatus'
 import { useMergeConflicts } from '../hooks/useMergeConflicts'
 import { useHomedir } from '../hooks/useHomedir'
 import { rpc } from '../rpc'
-import type { IdeId, IssueTracker, Worktree } from '../shared/types'
+import type { IdeId, IssueTracker, TerminalId, Worktree } from '../shared/types'
 
 interface WorktreeCardProps {
   worktree: Worktree
@@ -25,6 +25,7 @@ interface WorktreeCardProps {
   pollIntervalSec: number
   refreshKey: number
   defaultIde: IdeId
+  defaultTerminal: TerminalId
   issueTracker: IssueTracker
   deleting?: boolean
   settingUp?: boolean
@@ -63,7 +64,7 @@ function extractIssueKeyFromPRBody(body: string | null | undefined, tracker: Iss
 }
 
 export function WorktreeCard({
-  worktree, repoPath, pollIntervalSec, refreshKey, defaultIde, issueTracker,
+  worktree, repoPath, pollIntervalSec, refreshKey, defaultIde, defaultTerminal, issueTracker,
   deleting, settingUp, notReady, onToggleNotReady, onConfirmDelete
 }: WorktreeCardProps) {
   const [deleteOpened, setDeleteOpened] = useState(false)
@@ -176,7 +177,7 @@ export function WorktreeCard({
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
-                <LaunchButtons worktreePath={worktree.path} defaultIde={defaultIde} />
+                <LaunchButtons worktreePath={worktree.path} defaultIde={defaultIde} defaultTerminal={defaultTerminal} />
                 {!worktree.isMain && (
                   <button
                     title={notReady ? 'Mark as ready' : 'Mark as not ready'}

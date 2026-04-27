@@ -29,7 +29,7 @@ export default function App() {
     config, loading,
     addRepo, removeRepo, setPollInterval, setAutoUpdateEnabled,
     setUpdateCheckInterval, reorderRepos, reorderWorktrees, setDefaultIde,
-    setRepoSetupCommands, setIssuePanelOpen, setIssuePanelWidth,
+    setDefaultTerminal, setRepoSetupCommands, setIssuePanelOpen, setIssuePanelWidth,
     setWorktreeBasePath, setIssueTracker, setFetchInterval,
     setDismissedDependencyWarning, setZoomLevel, toggleNotReady
   } = useConfig()
@@ -234,6 +234,7 @@ export default function App() {
                 pollIntervalSec={config.pollIntervalSec}
                 fetchIntervalSec={config.fetchIntervalSec}
                 defaultIde={config.defaultIde}
+                defaultTerminal={config.defaultTerminal}
                 issueTracker={config.issueTracker}
                 worktreeOrder={config.worktreeOrder}
                 notReadyWorktrees={config.notReadyWorktrees}
@@ -276,6 +277,7 @@ export default function App() {
         setAutoUpdateEnabled={setAutoUpdateEnabled}
         setUpdateCheckInterval={setUpdateCheckInterval}
         setDefaultIde={setDefaultIde}
+        setDefaultTerminal={setDefaultTerminal}
         setRepoSetupCommands={setRepoSetupCommands}
         setWorktreeBasePath={setWorktreeBasePath}
         setIssueTracker={setIssueTracker}
