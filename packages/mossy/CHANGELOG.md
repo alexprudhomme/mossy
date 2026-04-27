@@ -1,5 +1,11 @@
 # mossy
 
+## 0.6.1
+
+### Patch Changes
+
+- 672219c: Set iTerm2 tab name to the worktree/branch name when opening a terminal tab, instead of the default "zsh" label.
+
 ## 0.6.0
 
 ### Minor Changes
