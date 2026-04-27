@@ -14,11 +14,33 @@ export async function launchIde(ideId: IdeId, worktreePath: string): Promise<voi
 export async function launchTerminal(terminalId: TerminalId, worktreePath: string): Promise<void> {
   const terminal = TERMINAL_REGISTRY[terminalId]
   const env = await getShellEnv()
-  Bun.spawn(['open', '-a', terminal.appName, worktreePath], {
-    stdout: 'ignore',
-    stderr: 'ignore',
-    env
-  })
+  const tabName = worktreePath.split('/').pop() || worktreePath
+
+  if (terminalId === 'iterm2') {
+    const script = `
+      tell application "iTerm"
+        activate
+        tell current window
+          create tab with default profile
+          tell current session
+            set name to "${tabName.replace(/"/g, '\\"')}"
+            write text "cd ${worktreePath.replace(/"/g, '\\"')}"
+          end tell
+        end tell
+      end tell
+    `
+    Bun.spawn(['osascript', '-e', script], {
+      stdout: 'ignore',
+      stderr: 'ignore',
+      env
+    })
+  } else {
+    Bun.spawn(['open', '-a', terminal.appName, worktreePath], {
+      stdout: 'ignore',
+      stderr: 'ignore',
+      env
+    })
+  }
 }
 
 export async function launchURL(url: string): Promise<void> {
