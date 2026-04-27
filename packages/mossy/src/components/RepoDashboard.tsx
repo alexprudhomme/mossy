@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   IconRefresh, IconPlus, IconChevronDown, IconChevronRight, IconGripVertical,
-  IconAlertCircle, IconCheck, IconX, IconGitBranch
+  IconAlertCircle, IconCheck, IconX, IconGitBranch, IconArrowBarDown
 } from '@tabler/icons-react'
 import {
   DndContext,
@@ -17,9 +17,11 @@ import { WorktreeCard } from './WorktreeCard'
 import { LaunchButtons } from './LaunchButtons'
 import { AddWorktreeModal } from './AddWorktreeModal'
 import { useWorktrees } from '../hooks/useWorktrees'
+import { useWorktreeStatus } from '../hooks/useWorktreeStatus'
 import { useCollapsed } from '../hooks/useCollapsed'
 import { useHomedir } from '../hooks/useHomedir'
 import { useFetchRepo } from '../hooks/useFetchRepo'
+import { rpc } from '../rpc'
 import type { DragEndEvent } from '@dnd-kit/core'
 import type { IdeId, IssueTracker, RepoConfig, TerminalId, Worktree } from '../shared/types'
 
@@ -52,11 +54,30 @@ function RepoSection({
   const { worktrees, loading, error, deleteError, deletingPaths, startDelete, clearDeleteError, settingUpPaths, setupError, startSetup, clearSetupError, refresh } = useWorktrees(repo.path, pollIntervalSec)
   const [addOpened, setAddOpened] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [pulling, setPulling] = useState(false)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: repo.id })
   const { shortenPath } = useHomedir()
 
   const handleFetched = useCallback(() => setRefreshKey((k) => k + 1), [])
   useFetchRepo(repo.path, fetchIntervalSec, handleFetched)
+
+  const { status: rootStatus, refresh: refreshRootStatus } = useWorktreeStatus(repo.path, pollIntervalSec, refreshKey)
+  const hasUnpulled = (rootStatus?.unpulledCommits ?? 0) > 0
+
+  const handlePullMain = useCallback(async () => {
+    if (pulling) return
+    setPulling(true)
+    try {
+      await rpc().request['git:pull']({ worktreePath: repo.path })
+      await refresh()
+      await refreshRootStatus()
+      setRefreshKey((k) => k + 1)
+    } catch {
+      // pull failures are non-critical for the main repo view
+    } finally {
+      setPulling(false)
+    }
+  }, [pulling, repo.path, refresh, refreshRootStatus])
 
   // Separate root worktree (the repo itself) from feature worktrees
   const rootWorktree = useMemo(() => worktrees.find((wt) => wt.path === repo.path), [worktrees, repo.path])
@@ -155,6 +176,22 @@ function RepoSection({
               <IconGitBranch size={14} className="text-primary shrink-0" />
               <span className="text-xs font-mono text-muted-foreground truncate">{rootWorktree.branch}</span>
               <LaunchButtons worktreePath={rootWorktree.path} defaultIde={defaultIde} defaultTerminal={defaultTerminal} />
+              {(hasUnpulled || pulling) && (
+                <button
+                  onClick={handlePullMain}
+                  disabled={pulling}
+                  title={`Pull ${rootStatus?.unpulledCommits ?? ''} commit${rootStatus?.unpulledCommits === 1 ? '' : 's'} into main repo`}
+                  className="inline-flex items-center justify-center p-1 rounded-md text-cyan-400 hover:bg-accent hover:text-cyan-300 transition-colors disabled:opacity-50"
+                >
+                  {pulling
+                    ? <span className="animate-spin h-4 w-4 border-2 border-cyan-400 border-t-transparent rounded-full inline-block" />
+                    : <>
+                        <IconArrowBarDown size={16} />
+                        <span className="text-xs font-semibold ml-0.5">{rootStatus?.unpulledCommits}</span>
+                      </>
+                  }
+                </button>
+              )}
             </>
           )}
         </div>
