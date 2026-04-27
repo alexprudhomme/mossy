@@ -2,6 +2,7 @@ import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs'
 import { isValidIdeId } from '../../shared/ide-registry'
+import { isValidTerminalId } from '../../shared/terminal-registry'
 import type { AppConfig, IssueTracker } from '../../shared/types'
 
 const CONFIG_FILENAME = 'mossy-config.json'
@@ -30,6 +31,7 @@ const DEFAULTS: AppConfig = {
   updateCheckIntervalMin: 30,
   collapsedRepos: [],
   defaultIde: 'vscode',
+  defaultTerminal: 'ghostty',
   issuePanelOpen: false,
   issuePanelWidth: 260,
   dismissedDependencyWarning: false,
@@ -71,6 +73,7 @@ function sanitizeConfig(config: Partial<AppConfig>): AppConfig {
     updateCheckIntervalMin,
     collapsedRepos: Array.isArray(config.collapsedRepos) ? [...config.collapsedRepos] : [],
     defaultIde: isValidIdeId(config.defaultIde) ? config.defaultIde : DEFAULTS.defaultIde,
+    defaultTerminal: isValidTerminalId(config.defaultTerminal) ? config.defaultTerminal : DEFAULTS.defaultTerminal,
     issuePanelOpen: typeof config.issuePanelOpen === 'boolean' ? config.issuePanelOpen : DEFAULTS.issuePanelOpen,
     issuePanelWidth: typeof config.issuePanelWidth === 'number'
       ? clamp(Math.round(config.issuePanelWidth), MIN_ISSUE_PANEL_WIDTH, MAX_ISSUE_PANEL_WIDTH)

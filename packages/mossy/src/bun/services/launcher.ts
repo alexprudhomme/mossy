@@ -1,6 +1,8 @@
 import { getShellEnv } from './shell-env'
 import { IDE_REGISTRY } from '../../shared/ide-registry'
+import { TERMINAL_REGISTRY } from '../../shared/terminal-registry'
 import type { IdeId } from '../../shared/types'
+import type { TerminalId } from '../../shared/types'
 
 export async function launchIde(ideId: IdeId, worktreePath: string): Promise<void> {
   const ide = IDE_REGISTRY[ideId]
@@ -9,9 +11,10 @@ export async function launchIde(ideId: IdeId, worktreePath: string): Promise<voi
   await proc.exited
 }
 
-export async function launchGhostty(worktreePath: string): Promise<void> {
+export async function launchTerminal(terminalId: TerminalId, worktreePath: string): Promise<void> {
+  const terminal = TERMINAL_REGISTRY[terminalId]
   const env = await getShellEnv()
-  Bun.spawn(['open', '-a', 'Ghostty.app', worktreePath], {
+  Bun.spawn(['open', '-a', terminal.appName, worktreePath], {
     stdout: 'ignore',
     stderr: 'ignore',
     env

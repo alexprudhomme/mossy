@@ -21,7 +21,7 @@ import { useCollapsed } from '../hooks/useCollapsed'
 import { useHomedir } from '../hooks/useHomedir'
 import { useFetchRepo } from '../hooks/useFetchRepo'
 import type { DragEndEvent } from '@dnd-kit/core'
-import type { IdeId, IssueTracker, RepoConfig, Worktree } from '../shared/types'
+import type { IdeId, IssueTracker, RepoConfig, TerminalId, Worktree } from '../shared/types'
 
 // --- RepoSection ---
 
@@ -30,6 +30,7 @@ interface RepoSectionProps {
   pollIntervalSec: number
   fetchIntervalSec: number
   defaultIde: IdeId
+  defaultTerminal: TerminalId
   issueTracker: IssueTracker
   isCollapsed: boolean
   onToggleCollapse: () => void
@@ -44,7 +45,7 @@ interface RepoSectionProps {
 }
 
 function RepoSection({
-  repo, pollIntervalSec, fetchIntervalSec, defaultIde, issueTracker,
+  repo, pollIntervalSec, fetchIntervalSec, defaultIde, defaultTerminal, issueTracker,
   isCollapsed, onToggleCollapse, isDropTarget, isOver, issueDropBranch, onIssueDropBranchClear,
   savedWorktreeOrder, onReorderWorktrees, notReadyWorktrees, onToggleNotReady
 }: RepoSectionProps) {
@@ -149,7 +150,7 @@ function RepoSection({
               <span className="text-[#484f58] mx-0.5">·</span>
               <IconGitBranch size={14} className="text-primary shrink-0" />
               <span className="text-xs font-mono text-muted-foreground truncate">{rootWorktree.branch}</span>
-              <LaunchButtons worktreePath={rootWorktree.path} defaultIde={defaultIde} />
+              <LaunchButtons worktreePath={rootWorktree.path} defaultIde={defaultIde} defaultTerminal={defaultTerminal} />
             </>
           )}
         </div>
@@ -222,6 +223,7 @@ function RepoSection({
                       pollIntervalSec={pollIntervalSec}
                       refreshKey={refreshKey}
                       defaultIde={defaultIde}
+                      defaultTerminal={defaultTerminal}
                       issueTracker={issueTracker}
                       deleting={deletingPaths.has(wt.path)}
                       settingUp={settingUpPaths.has(wt.path)}
@@ -247,6 +249,7 @@ interface RepoDashboardProps {
   pollIntervalSec: number
   fetchIntervalSec: number
   defaultIde: IdeId
+  defaultTerminal: TerminalId
   issueTracker: IssueTracker
   worktreeOrder: Record<string, string[]>
   notReadyWorktrees: string[]
@@ -260,7 +263,7 @@ interface RepoDashboardProps {
 }
 
 export function RepoDashboard({
-  repos, pollIntervalSec, fetchIntervalSec, defaultIde, issueTracker,
+  repos, pollIntervalSec, fetchIntervalSec, defaultIde, defaultTerminal, issueTracker,
   worktreeOrder, notReadyWorktrees, onToggleNotReady, onReorder, onReorderWorktrees,
   isDraggingIssue, overRepoId, issueDropTargets, onIssueDropBranchClear
 }: RepoDashboardProps) {
@@ -288,6 +291,7 @@ export function RepoDashboard({
             pollIntervalSec={pollIntervalSec}
             fetchIntervalSec={fetchIntervalSec}
             defaultIde={defaultIde}
+            defaultTerminal={defaultTerminal}
             issueTracker={issueTracker}
             isCollapsed={collapsed.has(repo.id)}
             onToggleCollapse={() => toggle(repo.id)}
