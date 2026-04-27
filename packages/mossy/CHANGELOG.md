@@ -1,5 +1,15 @@
 # mossy
 
+## 0.6.0
+
+### Minor Changes
+
+- ea73ea0: Add iTerm2 terminal support with a terminal switcher in settings. Users can now choose between Ghostty, iTerm2, and Terminal.app as their default terminal. The terminal button in worktree cards dynamically reflects the selected terminal with its own icon.
+
+### Patch Changes
+
+- e97dc79: Add a pull button next to the IDE and terminal buttons in the repo header to update the main project repository.
+
 ## 0.5.2
 
 ### Patch Changes
