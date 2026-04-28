@@ -1,5 +1,11 @@
 # mossy
 
+## 0.7.0
+
+### Minor Changes
+
+- ac801af: Add sparkly rainbow styling to the "Merged" status badge on Jira tickets, matching the animation treatment used for approved PRs.
+
 ## 0.6.1
 
 ### Patch Changes
