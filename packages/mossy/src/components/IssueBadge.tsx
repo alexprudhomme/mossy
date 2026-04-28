@@ -35,6 +35,21 @@ export function IssueBadge({ issueKey, issue, loading, issueTracker }: IssueBadg
     )
   }
 
+  if (issue.status === 'Merged') {
+    return (
+      <button
+        onClick={() => { if (issue.url) window.open(issue.url, '_blank') }}
+        title={`${issue.summary} — ${issue.status}`}
+        className="rainbow-approved-pill relative inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border cursor-pointer"
+      >
+        <span className="sparkle" aria-hidden>✦</span>
+        <span className="sparkle" aria-hidden>✦</span>
+        <span className="sparkle" aria-hidden>✦</span>
+        <span className="rainbow-text">{issue.key}</span>
+      </button>
+    )
+  }
+
   return (
     <button
       onClick={() => { if (issue.url) window.open(issue.url, '_blank') }}

@@ -12,7 +12,8 @@ const STATUS_COLORS: Record<string, string> = {
   'Done': 'bg-emerald-500/20 text-emerald-400',
   'Closed': 'bg-emerald-500/20 text-emerald-400',
   'closed': 'bg-violet-500/20 text-violet-400',
-  'Resolved': 'bg-emerald-500/20 text-emerald-400'
+  'Resolved': 'bg-emerald-500/20 text-emerald-400',
+  'Merged': '',
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -56,9 +57,18 @@ export function IssueCard({ issue, isDragging, onMouseDown }: IssueCardProps) {
         <span className="text-[10px] font-mono text-[#484f58] shrink-0">
           {issue.key}
         </span>
-        <span className={`ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${statusColor}`}>
-          {issue.status}
-        </span>
+        {issue.status === 'Merged' ? (
+          <span className="rainbow-approved-pill relative ml-auto inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium border shrink-0 cursor-default">
+            <span className="sparkle" aria-hidden>✦</span>
+            <span className="sparkle" aria-hidden>✦</span>
+            <span className="sparkle" aria-hidden>✦</span>
+            <span className="rainbow-text">Merged</span>
+          </span>
+        ) : (
+          <span className={`ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${statusColor}`}>
+            {issue.status}
+          </span>
+        )}
       </div>
       <p className="text-xs text-foreground line-clamp-2 leading-relaxed">
         {issue.summary}
