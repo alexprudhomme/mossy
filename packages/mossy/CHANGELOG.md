@@ -1,5 +1,11 @@
 # mossy
 
+## 0.7.1
+
+### Patch Changes
+
+- aff0a03: Strip `#` from GitHub issue keys when generating branch names on drag-and-drop, preventing invalid git branch names.
+
 ## 0.7.0
 
 ### Minor Changes
