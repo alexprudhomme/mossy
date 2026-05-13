@@ -54,7 +54,8 @@ export default function App() {
   }, [config])
 
   const handleIssueDrop = useCallback((repoId: string, data: IssueDragData) => {
-    setIssueDropTargets((prev) => ({ ...prev, [repoId]: `${data.issueKey}-` }))
+    const branchPrefix = data.issueKey.replace(/#/g, '')
+    setIssueDropTargets((prev) => ({ ...prev, [repoId]: `${branchPrefix}-` }))
   }, [])
 
   const handlePanelResize = useCallback((width: number) => {
