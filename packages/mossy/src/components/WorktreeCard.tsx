@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { IconGitBranch, IconTrash, IconChevronDown, IconChevronRight, IconGripVertical, IconClockPause } from '@tabler/icons-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -30,7 +30,7 @@ interface WorktreeCardProps {
   deleting?: boolean
   settingUp?: boolean
   notReady?: boolean
-  isDraggingIssue?: boolean
+  suppressHover?: boolean
   onToggleNotReady?: () => void
   onConfirmDelete: (force: boolean) => void
 }
@@ -66,12 +66,17 @@ function extractIssueKeyFromPRBody(body: string | null | undefined, tracker: Iss
 
 export function WorktreeCard({
   worktree, repoPath, pollIntervalSec, refreshKey, defaultIde, defaultTerminal, issueTracker,
-  deleting, settingUp, notReady, isDraggingIssue, onToggleNotReady, onConfirmDelete
+  deleting, settingUp, notReady, suppressHover, onToggleNotReady, onConfirmDelete
 }: WorktreeCardProps) {
   const [deleteOpened, setDeleteOpened] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: worktree.path })
+
+  // Clear hover state when any drag operation starts
+  useEffect(() => {
+    if (suppressHover) setHovered(false)
+  }, [suppressHover])
 
   const { pr, loading: prLoading } = usePR(repoPath, worktree.isMain ? null : worktree.branch, pollIntervalSec, refreshKey)
 
@@ -101,7 +106,7 @@ export function WorktreeCard({
           'flex items-center gap-2 rounded-md border px-3 py-1.5 transition-all duration-150',
           isDragging
             ? 'opacity-40'
-           : (hovered && !isDraggingIssue)
+           : (hovered && !suppressHover)
               ? 'border-yellow-500/30 bg-yellow-500/[0.04] opacity-70'
               : 'border-border/40 bg-transparent opacity-50',
         )}
@@ -109,7 +114,7 @@ export function WorktreeCard({
           transform: CSS.Transform.toString(transform),
           transition: isDragging ? transition ?? undefined : undefined,
         }}
-        onMouseEnter={() => setHovered(true)}
+        onMouseEnter={() => { if (!suppressHover) setHovered(true) }}
         onMouseLeave={() => setHovered(false)}
       >
         <button
@@ -161,7 +166,7 @@ export function WorktreeCard({
           ? 'opacity-40'
           : deleting
             ? 'border-border/50 bg-card/50 opacity-45 pointer-events-none'
-            : (hovered && !isDraggingIssue)
+            : (hovered && !suppressHover)
               ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
               : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
       )}
@@ -169,7 +174,7 @@ export function WorktreeCard({
         transform: CSS.Transform.toString(transform),
         transition: isDragging ? transition ?? undefined : undefined,
       }}
-      onMouseEnter={() => setHovered(true)}
+      onMouseEnter={() => { if (!suppressHover) setHovered(true) }}
       onMouseLeave={() => setHovered(false)}
     >
       <div className="p-4">
