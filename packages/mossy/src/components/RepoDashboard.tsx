@@ -8,7 +8,8 @@ import {
   PointerSensor,
   closestCenter,
   useSensor,
-  useSensors
+  useSensors,
+  useDroppable
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -21,6 +22,7 @@ import { useWorktreeStatus } from '../hooks/useWorktreeStatus'
 import { useCollapsed } from '../hooks/useCollapsed'
 import { useHomedir } from '../hooks/useHomedir'
 import { useFetchRepo } from '../hooks/useFetchRepo'
+import { makeRepoDropId } from '../hooks/useIssueDrag'
 import { rpc } from '../rpc'
 import type { DragEndEvent } from '@dnd-kit/core'
 import type { IdeId, IssueTracker, RepoConfig, TerminalId, Worktree } from '../shared/types'
@@ -36,8 +38,8 @@ interface RepoSectionProps {
   issueTracker: IssueTracker
   isCollapsed: boolean
   onToggleCollapse: () => void
-  isDropTarget: boolean
-  isOver: boolean
+  isDraggingIssue: boolean
+  isOverThisRepo: boolean
   issueDropBranch: string | null
   onIssueDropBranchClear: () => void
   savedWorktreeOrder: string[]
@@ -48,15 +50,26 @@ interface RepoSectionProps {
 
 function RepoSection({
   repo, pollIntervalSec, fetchIntervalSec, defaultIde, defaultTerminal, issueTracker,
-  isCollapsed, onToggleCollapse, isDropTarget, isOver, issueDropBranch, onIssueDropBranchClear,
+  isCollapsed, onToggleCollapse, isDraggingIssue, isOverThisRepo, issueDropBranch, onIssueDropBranchClear,
   savedWorktreeOrder, onReorderWorktrees, notReadyWorktrees, onToggleNotReady
 }: RepoSectionProps) {
   const { worktrees, loading, error, deleteError, deletingPaths, startDelete, clearDeleteError, settingUpPaths, setupError, startSetup, clearSetupError, refresh } = useWorktrees(repo.path, pollIntervalSec)
   const [addOpened, setAddOpened] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const [pulling, setPulling] = useState(false)
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: repo.id })
+  const { attributes, listeners, setNodeRef: setSortableNodeRef, transform, transition, isDragging } = useSortable({ id: repo.id })
+  const { setNodeRef: setDroppableNodeRef, isOver: isOverDroppable } = useDroppable({ id: makeRepoDropId(repo.id) })
   const { shortenPath } = useHomedir()
+
+  // Combine sortable + droppable refs
+  const setNodeRef = useCallback((node: HTMLElement | null) => {
+    setSortableNodeRef(node)
+    setDroppableNodeRef(node)
+  }, [setSortableNodeRef, setDroppableNodeRef])
+
+  const isDropTarget = isDraggingIssue
+  const isOver = isOverThisRepo || isOverDroppable
+  const dropHighlight = isDropTarget && isOver
 
   const handleFetched = useCallback(() => setRefreshKey((k) => k + 1), [])
   useFetchRepo(repo.path, fetchIntervalSec, handleFetched)
@@ -128,14 +141,11 @@ function RepoSection({
     if (commands.length > 0) void startSetup(worktreePath, commands)
   }
 
-  const dropHighlight = isDropTarget && isOver
-
   if (!loading && worktrees.length === 0) return null
 
   return (
     <div
       ref={setNodeRef}
-      data-repo-id={repo.id}
       className={cn(
         'flex flex-col gap-3 rounded-lg transition-all duration-100',
         isDragging && 'opacity-40'
@@ -336,8 +346,8 @@ export function RepoDashboard({
             issueTracker={issueTracker}
             isCollapsed={collapsed.has(repo.id)}
             onToggleCollapse={() => toggle(repo.id)}
-            isDropTarget={isDraggingIssue}
-            isOver={overRepoId === repo.id}
+            isDraggingIssue={isDraggingIssue}
+            isOverThisRepo={overRepoId === repo.id}
             issueDropBranch={issueDropTargets[repo.id] ?? null}
             onIssueDropBranchClear={() => onIssueDropBranchClear(repo.id)}
             savedWorktreeOrder={worktreeOrder[repo.id] ?? []}

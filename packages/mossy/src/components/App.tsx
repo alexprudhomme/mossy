@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { IconSettings, IconTicket } from '@tabler/icons-react'
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   closestCenter,
   useSensor,
@@ -11,11 +12,12 @@ import { arrayMove } from '@dnd-kit/sortable'
 import { RepoDashboard } from './RepoDashboard'
 import { SettingsModal } from './SettingsModal'
 import { IssuePanel } from './IssuePanel'
+import { IssueCardOverlay } from './IssueCard'
 import { useConfig } from '../hooks/useConfig'
 import { useMyIssues } from '../hooks/useMyIssues'
-import { useIssueDrag } from '../hooks/useIssueDrag'
+import { isIssueDragId, isRepoDropId, extractRepoIdFromDropId, ISSUE_DRAG_PREFIX } from '../hooks/useIssueDrag'
 import { rpc } from '../rpc'
-import type { DragEndEvent } from '@dnd-kit/core'
+import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import type { DependencyStatus, RepoConfig } from '../shared/types'
 import type { IssueDragData } from '../hooks/useIssueDrag'
 
@@ -63,12 +65,53 @@ export default function App() {
     void setIssuePanelWidth(width)
   }, [setIssuePanelWidth])
 
-  const { isDragging: isDraggingIssue, draggingKey, overRepoId, onMouseDown: onIssueMouseDown } =
-    useIssueDrag(handleIssueDrop)
+  // Unified dnd-kit state for issue dragging
+  const [draggingIssueKey, setDraggingIssueKey] = useState<string | null>(null)
+  const [overRepoId, setOverRepoId] = useState<string | null>(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const id = String(event.active.id)
+    if (isIssueDragId(id)) {
+      setDraggingIssueKey(id.slice(ISSUE_DRAG_PREFIX.length))
+    }
+  }, [])
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const overId = event.over?.id ? String(event.over.id) : null
+    if (overId && isRepoDropId(overId)) {
+      setOverRepoId(extractRepoIdFromDropId(overId))
+    } else if (overId && orderedRepos.some((r) => r.id === overId)) {
+      // Collision detection may resolve to the sortable repo ID
+      setOverRepoId(overId)
+    } else {
+      setOverRepoId(null)
+    }
+  }, [orderedRepos])
+
   const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const activeId = String(event.active.id)
+
+    // Issue dropped onto a repo
+    if (isIssueDragId(activeId)) {
+      const overId = event.over?.id ? String(event.over.id) : null
+      let targetRepoId: string | null = null
+      if (overId && isRepoDropId(overId)) {
+        targetRepoId = extractRepoIdFromDropId(overId)
+      } else if (overId && orderedRepos.some((r) => r.id === overId)) {
+        targetRepoId = overId
+      }
+      if (targetRepoId) {
+        const data = event.active.data.current as IssueDragData
+        handleIssueDrop(targetRepoId, data)
+      }
+      setDraggingIssueKey(null)
+      setOverRepoId(null)
+      return
+    }
+
+    // Repo reordering
     const { active, over } = event
     if (!over || active.id === over.id) return
     const oldIndex = orderedRepos.findIndex((r) => r.id === active.id)
@@ -77,7 +120,15 @@ export default function App() {
     const reordered = arrayMove(orderedRepos, oldIndex, newIndex)
     setOrderedRepos(reordered)
     void reorderRepos(reordered)
-  }, [orderedRepos, reorderRepos])
+  }, [orderedRepos, reorderRepos, handleIssueDrop])
+
+  const handleDragCancel = useCallback(() => {
+    setDraggingIssueKey(null)
+    setOverRepoId(null)
+  }, [])
+
+  // Find the issue being dragged for the overlay
+  const draggingIssue = draggingIssueKey ? issues.find((i) => i.key === draggingIssueKey) : null
 
   const loadDependencies = useCallback(async () => {
     try {
@@ -166,7 +217,7 @@ export default function App() {
   const showIssuePanel = issuePanelOpen && issueTracker !== 'none'
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
       <div className="flex flex-col h-screen bg-background text-foreground">
         {/* Header / Title bar */}
         <header
@@ -242,7 +293,7 @@ export default function App() {
                 onToggleNotReady={toggleNotReady}
                 onReorder={(repos) => { setOrderedRepos(repos); void reorderRepos(repos) }}
                 onReorderWorktrees={reorderWorktrees}
-                isDraggingIssue={isDraggingIssue}
+                isDraggingIssue={draggingIssueKey !== null}
                 overRepoId={overRepoId}
                 issueDropTargets={issueDropTargets}
                 onIssueDropBranchClear={(repoId) => setIssueDropTargets((prev) => ({ ...prev, [repoId]: null }))}
@@ -256,8 +307,6 @@ export default function App() {
                 issues={issues}
                 loading={issuesLoading}
                 onRefresh={refreshIssues}
-                draggingKey={draggingKey}
-                onIssueMouseDown={onIssueMouseDown}
                 onResize={handlePanelResize}
                 issueTracker={issueTracker}
               />
@@ -283,6 +332,10 @@ export default function App() {
         setWorktreeBasePath={setWorktreeBasePath}
         setIssueTracker={setIssueTracker}
       />
+
+      <DragOverlay dropAnimation={null}>
+        {draggingIssue ? <IssueCardOverlay issue={draggingIssue} /> : null}
+      </DragOverlay>
     </DndContext>
   )
 }

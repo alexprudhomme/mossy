@@ -1,19 +1,16 @@
 import { IconRefresh } from '@tabler/icons-react'
 import { IssueCard } from './IssueCard'
 import type { Issue, IssueTracker } from '../shared/types'
-import type { IssueDragData } from '../hooks/useIssueDrag'
 
 interface IssuePanelProps {
   issues: Issue[]
   loading: boolean
   onRefresh: () => void
-  draggingKey: string | null
-  onIssueMouseDown: (e: React.MouseEvent, data: IssueDragData) => void
   onResize: (width: number) => void
   issueTracker: IssueTracker
 }
 
-export function IssuePanel({ issues, loading, onRefresh, draggingKey, onIssueMouseDown, onResize, issueTracker }: IssuePanelProps) {
+export function IssuePanel({ issues, loading, onRefresh, onResize, issueTracker }: IssuePanelProps) {
   const handleResizeMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
     const startX = e.clientX
@@ -75,8 +72,6 @@ export function IssuePanel({ issues, loading, onRefresh, draggingKey, onIssueMou
               <IssueCard
                 key={issue.key}
                 issue={issue}
-                isDragging={draggingKey === issue.key}
-                onMouseDown={onIssueMouseDown}
               />
             ))}
           </div>
