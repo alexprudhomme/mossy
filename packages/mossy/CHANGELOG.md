@@ -1,5 +1,11 @@
 # mossy
 
+## 0.7.3
+
+### Patch Changes
+
+- 8718066: Suppress worktree card hover highlight during all drag operations (repo reorder, worktree reorder), not just issue dragging.
+
 ## 0.7.2
 
 ### Patch Changes
