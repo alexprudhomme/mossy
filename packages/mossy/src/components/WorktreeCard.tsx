@@ -91,6 +91,66 @@ export function WorktreeCard({
     if (!deleting) setExpanded((prev) => !prev)
   }, [deleting])
 
+  // Compact single-line layout for paused (not ready) worktrees
+  if (notReady && !deleting) {
+    return (
+      <div
+        ref={setNodeRef}
+        className={cn(
+          'flex items-center gap-2 rounded-md border px-3 py-1.5 transition-all duration-150',
+          isDragging
+            ? 'opacity-40'
+            : hovered
+              ? 'border-yellow-500/30 bg-yellow-500/[0.04] opacity-70'
+              : 'border-border/40 bg-transparent opacity-50',
+        )}
+        style={{
+          transform: CSS.Transform.toString(transform),
+          transition: isDragging ? transition ?? undefined : undefined,
+        }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <button
+          className="p-0.5 rounded-md text-[#484f58] hover:text-muted-foreground cursor-grab touch-none transition-colors shrink-0"
+          {...attributes}
+          {...listeners}
+        >
+          <IconGripVertical size={12} />
+        </button>
+        <IconGitBranch size={14} className="text-[#484f58] shrink-0" />
+        <span className="text-xs font-mono text-muted-foreground truncate">
+          {worktree.branch}
+        </span>
+        <div className="flex items-center gap-1.5 ml-auto shrink-0">
+          <PRBadge pr={pr} loading={prLoading} />
+          <IssueBadge issueKey={issueKey} issue={issue} loading={issueLoading} issueTracker={issueTracker} />
+          <LaunchButtons worktreePath={worktree.path} defaultIde={defaultIde} defaultTerminal={defaultTerminal} />
+          <button
+            title="Mark as ready"
+            onClick={onToggleNotReady}
+            className="p-0.5 rounded-md bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 transition-colors"
+          >
+            <IconClockPause size={14} />
+          </button>
+          <button
+            title="Delete worktree"
+            onClick={() => setDeleteOpened(true)}
+            className="p-0.5 rounded-md hover:bg-pink-500/20 text-muted-foreground hover:text-pink-400 transition-colors"
+          >
+            <IconTrash size={14} />
+          </button>
+        </div>
+        <DeleteWorktreeModal
+          worktree={worktree}
+          opened={deleteOpened}
+          onClose={() => setDeleteOpened(false)}
+          onConfirm={onConfirmDelete}
+        />
+      </div>
+    )
+  }
+
   return (
     <div
       ref={setNodeRef}
@@ -100,13 +160,9 @@ export function WorktreeCard({
           ? 'opacity-40'
           : deleting
             ? 'border-border/50 bg-card/50 opacity-45 pointer-events-none'
-            : notReady
-              ? hovered
-                ? 'border-yellow-500/30 bg-gradient-to-br from-yellow-500/[0.06] to-yellow-500/[0.02] opacity-60'
-                : 'border-yellow-500/20 bg-gradient-to-br from-yellow-500/[0.03] to-transparent opacity-55'
-              : hovered
-                ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
-                : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
+            : hovered
+              ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
+              : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
       )}
       style={{
         transform: CSS.Transform.toString(transform),
@@ -143,11 +199,6 @@ export function WorktreeCard({
                     main
                   </span>
                 )}
-                {notReady && (
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-yellow-500/15 text-yellow-400 border border-yellow-500/30 shrink-0">
-                    not ready
-                  </span>
-                )}
               </div>
               <span className="text-xs text-muted-foreground truncate block">
                 {shortenPath(worktree.path)}
@@ -180,14 +231,9 @@ export function WorktreeCard({
                 <LaunchButtons worktreePath={worktree.path} defaultIde={defaultIde} defaultTerminal={defaultTerminal} />
                 {!worktree.isMain && (
                   <button
-                    title={notReady ? 'Mark as ready' : 'Mark as not ready'}
+                    title="Mark as not ready"
                     onClick={onToggleNotReady}
-                    className={cn(
-                      'p-1 rounded-md transition-colors',
-                      notReady
-                        ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-                        : 'text-muted-foreground hover:bg-yellow-500/20 hover:text-yellow-400'
-                    )}
+                    className="p-1 rounded-md text-muted-foreground hover:bg-yellow-500/20 hover:text-yellow-400 transition-colors"
                   >
                     <IconClockPause size={16} />
                   </button>
