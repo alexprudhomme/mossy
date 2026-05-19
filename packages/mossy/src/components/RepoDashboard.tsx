@@ -279,6 +279,7 @@ function RepoSection({
                       deleting={deletingPaths.has(wt.path)}
                       settingUp={settingUpPaths.has(wt.path)}
                       notReady={notReadyWorktrees.includes(wt.path)}
+                      isDraggingIssue={isDraggingIssue}
                       onToggleNotReady={() => onToggleNotReady(wt.path)}
                       onConfirmDelete={(force) => startDelete(wt.path, force)}
                     />

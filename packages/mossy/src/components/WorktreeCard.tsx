@@ -30,6 +30,7 @@ interface WorktreeCardProps {
   deleting?: boolean
   settingUp?: boolean
   notReady?: boolean
+  isDraggingIssue?: boolean
   onToggleNotReady?: () => void
   onConfirmDelete: (force: boolean) => void
 }
@@ -65,7 +66,7 @@ function extractIssueKeyFromPRBody(body: string | null | undefined, tracker: Iss
 
 export function WorktreeCard({
   worktree, repoPath, pollIntervalSec, refreshKey, defaultIde, defaultTerminal, issueTracker,
-  deleting, settingUp, notReady, onToggleNotReady, onConfirmDelete
+  deleting, settingUp, notReady, isDraggingIssue, onToggleNotReady, onConfirmDelete
 }: WorktreeCardProps) {
   const [deleteOpened, setDeleteOpened] = useState(false)
   const [hovered, setHovered] = useState(false)
@@ -100,7 +101,7 @@ export function WorktreeCard({
           'flex items-center gap-2 rounded-md border px-3 py-1.5 transition-all duration-150',
           isDragging
             ? 'opacity-40'
-            : hovered
+           : (hovered && !isDraggingIssue)
               ? 'border-yellow-500/30 bg-yellow-500/[0.04] opacity-70'
               : 'border-border/40 bg-transparent opacity-50',
         )}
@@ -160,7 +161,7 @@ export function WorktreeCard({
           ? 'opacity-40'
           : deleting
             ? 'border-border/50 bg-card/50 opacity-45 pointer-events-none'
-            : hovered
+            : (hovered && !isDraggingIssue)
               ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
               : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
       )}
