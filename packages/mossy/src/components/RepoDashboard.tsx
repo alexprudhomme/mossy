@@ -114,7 +114,10 @@ function RepoSection({
 
   const worktreeSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
 
+  const [isDraggingWorktree, setIsDraggingWorktree] = useState(false)
+
   const handleWorktreeDragEnd = useCallback((event: DragEndEvent) => {
+    setIsDraggingWorktree(false)
     const { active, over } = event
     if (!over || active.id === over.id) return
     const oldIndex = orderedWorktrees.findIndex((wt) => wt.path === active.id)
@@ -263,7 +266,7 @@ function RepoSection({
               <span className="text-sm text-muted-foreground">Loading worktrees...</span>
             </div>
           ) : (
-            <DndContext sensors={worktreeSensors} collisionDetection={closestCenter} onDragEnd={handleWorktreeDragEnd}>
+            <DndContext sensors={worktreeSensors} collisionDetection={closestCenter} onDragStart={() => setIsDraggingWorktree(true)} onDragEnd={handleWorktreeDragEnd} onDragCancel={() => setIsDraggingWorktree(false)}>
               <SortableContext items={orderedWorktrees.map((wt) => wt.path)} strategy={verticalListSortingStrategy}>
                 <div className="flex flex-col gap-3">
                   {orderedWorktrees.map((wt) => (
@@ -279,7 +282,7 @@ function RepoSection({
                       deleting={deletingPaths.has(wt.path)}
                       settingUp={settingUpPaths.has(wt.path)}
                       notReady={notReadyWorktrees.includes(wt.path)}
-                      isDraggingIssue={isDraggingIssue}
+                      suppressHover={isDraggingIssue || isDraggingWorktree}
                       onToggleNotReady={() => onToggleNotReady(wt.path)}
                       onConfirmDelete={(force) => startDelete(wt.path, force)}
                     />

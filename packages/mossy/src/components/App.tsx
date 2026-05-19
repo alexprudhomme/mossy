@@ -67,6 +67,7 @@ export default function App() {
 
   // Unified dnd-kit state for issue dragging
   const [draggingIssueKey, setDraggingIssueKey] = useState<string | null>(null)
+  const [isDraggingRepo, setIsDraggingRepo] = useState(false)
   const [overRepoId, setOverRepoId] = useState<string | null>(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
@@ -75,6 +76,8 @@ export default function App() {
     const id = String(event.active.id)
     if (isIssueDragId(id)) {
       setDraggingIssueKey(id.slice(ISSUE_DRAG_PREFIX.length))
+    } else {
+      setIsDraggingRepo(true)
     }
   }, [])
 
@@ -113,17 +116,19 @@ export default function App() {
 
     // Repo reordering
     const { active, over } = event
-    if (!over || active.id === over.id) return
+    if (!over || active.id === over.id) { setIsDraggingRepo(false); return }
     const oldIndex = orderedRepos.findIndex((r) => r.id === active.id)
     const newIndex = orderedRepos.findIndex((r) => r.id === over.id)
-    if (oldIndex === -1 || newIndex === -1) return
+    if (oldIndex === -1 || newIndex === -1) { setIsDraggingRepo(false); return }
     const reordered = arrayMove(orderedRepos, oldIndex, newIndex)
     setOrderedRepos(reordered)
     void reorderRepos(reordered)
+    setIsDraggingRepo(false)
   }, [orderedRepos, reorderRepos, handleIssueDrop])
 
   const handleDragCancel = useCallback(() => {
     setDraggingIssueKey(null)
+    setIsDraggingRepo(false)
     setOverRepoId(null)
   }, [])
 
@@ -293,7 +298,7 @@ export default function App() {
                 onToggleNotReady={toggleNotReady}
                 onReorder={(repos) => { setOrderedRepos(repos); void reorderRepos(repos) }}
                 onReorderWorktrees={reorderWorktrees}
-                isDraggingIssue={draggingIssueKey !== null}
+                isDraggingIssue={draggingIssueKey !== null || isDraggingRepo}
                 overRepoId={overRepoId}
                 issueDropTargets={issueDropTargets}
                 onIssueDropBranchClear={(repoId) => setIssueDropTargets((prev) => ({ ...prev, [repoId]: null }))}
