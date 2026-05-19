@@ -1,5 +1,12 @@
 # mossy
 
+## 0.7.2
+
+### Patch Changes
+
+- aaf2198: Paused worktrees now render as compact single-line rows instead of full-sized cards, reducing visual clutter.
+- a446f78: Replace custom issue drag-and-drop implementation with unified @dnd-kit library. Issue cards now use the same drag system as repo/worktree reordering, fixing various drag interaction bugs and improving reliability.
+
 ## 0.7.1
 
 ### Patch Changes
