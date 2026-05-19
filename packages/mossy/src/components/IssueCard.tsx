@@ -1,5 +1,7 @@
+import { useDraggable } from '@dnd-kit/core'
 import { cn } from '../lib/utils'
 import type { Issue } from '../shared/types'
+import { makeIssueDragId } from '../hooks/useIssueDrag'
 import type { IssueDragData } from '../hooks/useIssueDrag'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -28,28 +30,70 @@ const TYPE_COLORS: Record<string, string> = {
 interface IssueCardProps {
   issue: Issue
   isDragging?: boolean
-  onMouseDown?: (e: React.MouseEvent, data: IssueDragData) => void
 }
 
-export function IssueCard({ issue, isDragging, onMouseDown }: IssueCardProps) {
-  const statusColor = STATUS_COLORS[issue.status] ?? 'bg-muted/60 text-muted-foreground'
-  const typeColor = TYPE_COLORS[issue.issueType] ?? 'bg-muted/60 text-muted-foreground'
-
+export function IssueCard({ issue, isDragging: isDraggingProp }: IssueCardProps) {
   const dragData: IssueDragData = {
     issueKey: issue.key,
     issueSummary: issue.summary
   }
 
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: makeIssueDragId(issue.key),
+    data: dragData,
+  })
+
+  const statusColor = STATUS_COLORS[issue.status] ?? 'bg-muted/60 text-muted-foreground'
+  const typeColor = TYPE_COLORS[issue.issueType] ?? 'bg-muted/60 text-muted-foreground'
+
+  const dragging = isDragging || isDraggingProp
+
   return (
     <div
+      ref={setNodeRef}
       className={cn(
         'rounded-lg border bg-card p-3 select-none transition-opacity',
-        isDragging ? 'opacity-40' : 'opacity-100',
+        dragging ? 'opacity-40' : 'opacity-100',
         'cursor-grab active:cursor-grabbing'
       )}
-      onMouseDown={onMouseDown ? (e) => onMouseDown(e, dragData) : undefined}
       onDoubleClick={() => { if (issue.url) window.open(issue.url, '_blank') }}
+      {...listeners}
+      {...attributes}
     >
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${typeColor}`}>
+          {issue.issueType}
+        </span>
+        <span className="text-[10px] font-mono text-[#484f58] shrink-0">
+          {issue.key}
+        </span>
+        {issue.status === 'Merged' ? (
+          <span className="rainbow-approved-pill relative ml-auto inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium border shrink-0 cursor-default">
+            <span className="sparkle" aria-hidden>✦</span>
+            <span className="sparkle" aria-hidden>✦</span>
+            <span className="sparkle" aria-hidden>✦</span>
+            <span className="rainbow-text">Merged</span>
+          </span>
+        ) : (
+          <span className={`ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${statusColor}`}>
+            {issue.status}
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-foreground line-clamp-2 leading-relaxed">
+        {issue.summary}
+      </p>
+    </div>
+  )
+}
+
+/** Presentational-only version of the card used in DragOverlay */
+export function IssueCardOverlay({ issue }: { issue: Issue }) {
+  const statusColor = STATUS_COLORS[issue.status] ?? 'bg-muted/60 text-muted-foreground'
+  const typeColor = TYPE_COLORS[issue.issueType] ?? 'bg-muted/60 text-muted-foreground'
+
+  return (
+    <div className="rounded-lg border border-primary/50 bg-card p-3 select-none shadow-lg shadow-black/40 w-[240px]">
       <div className="flex items-center gap-1.5 mb-1">
         <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${typeColor}`}>
           {issue.issueType}
