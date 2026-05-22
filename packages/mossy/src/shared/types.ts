@@ -26,7 +26,6 @@ export interface AppConfig {
   issuePanelWidth: number
   dismissedDependencyWarning: boolean
   zoomLevel: number
-  worktreeOrder: Record<string, string[]>
   notReadyWorktrees: string[]
 }
 
