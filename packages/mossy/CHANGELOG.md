@@ -1,5 +1,11 @@
 # mossy
 
+## 0.8.0
+
+### Minor Changes
+
+- 3a6d0c0: Replace manual drag-and-drop worktree ordering with automatic sorting by PR status: open PRs appear first, followed by draft PRs, then worktrees without PRs, and paused worktrees last.
+
 ## 0.7.3
 
 ### Patch Changes
