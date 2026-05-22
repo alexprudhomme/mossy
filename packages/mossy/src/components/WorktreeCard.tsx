@@ -1,7 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { IconGitBranch, IconTrash, IconChevronDown, IconChevronRight, IconGripVertical, IconClockPause } from '@tabler/icons-react'
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+import { IconGitBranch, IconTrash, IconChevronDown, IconChevronRight, IconClockPause } from '@tabler/icons-react'
 import { cn } from '../lib/utils'
 import { IssueBadge } from './IssueBadge'
 import { PRBadge } from './PRBadge'
@@ -12,12 +10,11 @@ import { LaunchButtons } from './LaunchButtons'
 import { DeleteWorktreeModal } from './DeleteWorktreeModal'
 import { DiffPanel } from './DiffPanel'
 import { useIssue } from '../hooks/useIssue'
-import { usePR } from '../hooks/usePR'
 import { useWorktreeStatus } from '../hooks/useWorktreeStatus'
 import { useMergeConflicts } from '../hooks/useMergeConflicts'
 import { useHomedir } from '../hooks/useHomedir'
 import { rpc } from '../rpc'
-import type { IdeId, IssueTracker, TerminalId, Worktree } from '../shared/types'
+import type { IdeId, IssueTracker, PRInfo, TerminalId, Worktree } from '../shared/types'
 
 interface WorktreeCardProps {
   worktree: Worktree
@@ -27,6 +24,8 @@ interface WorktreeCardProps {
   defaultIde: IdeId
   defaultTerminal: TerminalId
   issueTracker: IssueTracker
+  pr: PRInfo | null
+  prLoading: boolean
   deleting?: boolean
   settingUp?: boolean
   notReady?: boolean
@@ -66,19 +65,16 @@ function extractIssueKeyFromPRBody(body: string | null | undefined, tracker: Iss
 
 export function WorktreeCard({
   worktree, repoPath, pollIntervalSec, refreshKey, defaultIde, defaultTerminal, issueTracker,
-  deleting, settingUp, notReady, suppressHover, onToggleNotReady, onConfirmDelete
+  pr, prLoading, deleting, settingUp, notReady, suppressHover, onToggleNotReady, onConfirmDelete
 }: WorktreeCardProps) {
   const [deleteOpened, setDeleteOpened] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [expanded, setExpanded] = useState(false)
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: worktree.path })
 
   // Clear hover state when any drag operation starts
   useEffect(() => {
     if (suppressHover) setHovered(false)
   }, [suppressHover])
-
-  const { pr, loading: prLoading } = usePR(repoPath, worktree.isMain ? null : worktree.branch, pollIntervalSec, refreshKey)
 
   // Prefer issue key from PR description; fall back to branch name when no PR exists
   const issueKey = useMemo(() => {
@@ -101,29 +97,15 @@ export function WorktreeCard({
   if (notReady && !deleting) {
     return (
       <div
-        ref={setNodeRef}
         className={cn(
           'flex items-center gap-2 rounded-md border px-3 py-1.5 transition-all duration-150',
-          isDragging
-            ? 'opacity-40'
-           : (hovered && !suppressHover)
-              ? 'border-yellow-500/30 bg-yellow-500/[0.04] opacity-70'
-              : 'border-border/40 bg-transparent opacity-50',
+          (hovered && !suppressHover)
+            ? 'border-yellow-500/30 bg-yellow-500/[0.04] opacity-70'
+            : 'border-border/40 bg-transparent opacity-50',
         )}
-        style={{
-          transform: CSS.Transform.toString(transform),
-          transition: isDragging ? transition ?? undefined : undefined,
-        }}
         onMouseEnter={() => { if (!suppressHover) setHovered(true) }}
         onMouseLeave={() => setHovered(false)}
       >
-        <button
-          className="p-0.5 rounded-md text-[#484f58] hover:text-muted-foreground cursor-grab touch-none transition-colors shrink-0"
-          {...attributes}
-          {...listeners}
-        >
-          <IconGripVertical size={12} />
-        </button>
         <IconGitBranch size={14} className="text-[#484f58] shrink-0" />
         <span className="text-xs font-mono text-muted-foreground truncate">
           {worktree.branch}
@@ -159,34 +141,20 @@ export function WorktreeCard({
 
   return (
     <div
-      ref={setNodeRef}
       className={cn(
         'flex flex-col rounded-lg border overflow-hidden transition-all duration-150',
-        isDragging
-          ? 'opacity-40'
-          : deleting
-            ? 'border-border/50 bg-card/50 opacity-45 pointer-events-none'
-            : (hovered && !suppressHover)
-              ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
-              : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
+        deleting
+          ? 'border-border/50 bg-card/50 opacity-45 pointer-events-none'
+          : (hovered && !suppressHover)
+            ? 'border-primary/45 bg-gradient-to-br from-primary/[0.08] to-primary/[0.02]'
+            : 'border-primary/20 bg-gradient-to-br from-primary/[0.03] to-transparent',
       )}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition: isDragging ? transition ?? undefined : undefined,
-      }}
       onMouseEnter={() => { if (!suppressHover) setHovered(true) }}
       onMouseLeave={() => setHovered(false)}
     >
       <div className="p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <button
-              className="p-0.5 rounded-md text-[#484f58] hover:text-muted-foreground cursor-grab touch-none transition-colors shrink-0"
-              {...attributes}
-              {...listeners}
-            >
-              <IconGripVertical size={14} />
-            </button>
             <button
               onClick={toggleExpand}
               className="p-0.5 rounded-md hover:bg-accent text-muted-foreground transition-colors shrink-0"

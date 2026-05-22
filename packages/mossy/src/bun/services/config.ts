@@ -36,7 +36,6 @@ const DEFAULTS: AppConfig = {
   issuePanelWidth: 260,
   dismissedDependencyWarning: false,
   zoomLevel: 1,
-  worktreeOrder: {},
   notReadyWorktrees: []
 }
 
@@ -82,13 +81,6 @@ function sanitizeConfig(config: Partial<AppConfig>): AppConfig {
     zoomLevel: typeof config.zoomLevel === 'number'
       ? Math.round(clamp(config.zoomLevel, MIN_ZOOM_LEVEL, MAX_ZOOM_LEVEL) * 10) / 10
       : DEFAULTS.zoomLevel,
-    worktreeOrder: config.worktreeOrder && typeof config.worktreeOrder === 'object' && !Array.isArray(config.worktreeOrder)
-      ? Object.fromEntries(
-          Object.entries(config.worktreeOrder).filter(
-            ([, v]) => Array.isArray(v) && v.every((p) => typeof p === 'string')
-          )
-        )
-      : {},
     notReadyWorktrees: Array.isArray(config.notReadyWorktrees)
       ? config.notReadyWorktrees.filter((p): p is string => typeof p === 'string')
       : []

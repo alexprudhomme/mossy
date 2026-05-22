@@ -30,7 +30,7 @@ export default function App() {
   const {
     config, loading,
     addRepo, removeRepo, setPollInterval, setAutoUpdateEnabled,
-    setUpdateCheckInterval, reorderRepos, reorderWorktrees, setDefaultIde,
+    setUpdateCheckInterval, reorderRepos, setDefaultIde,
     setDefaultTerminal, setRepoSetupCommands, setIssuePanelOpen, setIssuePanelWidth,
     setWorktreeBasePath, setIssueTracker, setFetchInterval,
     setDismissedDependencyWarning, setZoomLevel, toggleNotReady
@@ -293,11 +293,9 @@ export default function App() {
                 defaultIde={config.defaultIde}
                 defaultTerminal={config.defaultTerminal}
                 issueTracker={config.issueTracker}
-                worktreeOrder={config.worktreeOrder}
                 notReadyWorktrees={config.notReadyWorktrees}
                 onToggleNotReady={toggleNotReady}
                 onReorder={(repos) => { setOrderedRepos(repos); void reorderRepos(repos) }}
-                onReorderWorktrees={reorderWorktrees}
                 isDraggingIssue={draggingIssueKey !== null || isDraggingRepo}
                 overRepoId={overRepoId}
                 issueDropTargets={issueDropTargets}

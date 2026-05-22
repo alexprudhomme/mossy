@@ -25,7 +25,6 @@ const DEFAULT_CONFIG: AppConfig = {
   issuePanelWidth: 260,
   dismissedDependencyWarning: false,
   zoomLevel: 1,
-  worktreeOrder: {},
   notReadyWorktrees: [],
 }
 
