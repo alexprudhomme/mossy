@@ -1,5 +1,11 @@
 # mossy
 
+## 0.8.1
+
+### Patch Changes
+
+- e02887e: Add rate limit warning banner when GitHub API quota is exceeded. Shows reset time and auto-clears when limit resets.
+
 ## 0.8.0
 
 ### Minor Changes
