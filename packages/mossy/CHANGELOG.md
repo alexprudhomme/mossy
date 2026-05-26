@@ -1,5 +1,11 @@
 # mossy
 
+## 0.8.2
+
+### Patch Changes
+
+- 26932e0: Fix closed PRs displaying as "draft" - now shows correct "closed" state with pink styling. Sort order updated to: Merged → Open → Closed → Draft → No PR → Paused. Fixed excessive GitHub API calls caused by unstable array reference in useWorktreePRs. Increased minimum poll interval to 120 seconds to prevent rate limiting.
+
 ## 0.8.1
 
 ### Patch Changes
