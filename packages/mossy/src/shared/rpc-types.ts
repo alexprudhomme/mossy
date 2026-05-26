@@ -9,6 +9,7 @@ import type {
   Issue,
   MergeConflictInfo,
   PRInfo,
+  RateLimitStatus,
   SetupCommandResult,
   TerminalId,
   Worktree,
@@ -127,6 +128,10 @@ export type MossyRPC = {
       'gh:pr': {
         params: { repoPath: string; branch: string }
         response: PRInfo | null
+      }
+      'gh:rateLimit': {
+        params: Record<string, never>
+        response: RateLimitStatus
       }
 
       // Launcher

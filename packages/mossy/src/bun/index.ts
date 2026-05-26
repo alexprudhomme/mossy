@@ -24,7 +24,7 @@ import {
   getBranchInfo,
   getMergeConflicts
 } from './services/git'
-import { getPRForBranch } from './services/github'
+import { getPRForBranch, getRateLimitStatus } from './services/github'
 import { getCurrentIssue, getMyIssues } from './services/issue-dispatcher'
 import { launchIde, launchTerminal, launchURL } from './services/launcher'
 import pkg from '../../package.json'
@@ -247,6 +247,9 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
         const ghRepo = await getGitHubRepo(repoPath)
         if (!ghRepo) return null
         return getPRForBranch(repoPath, branch, ghRepo)
+      },
+      'gh:rateLimit': () => {
+        return getRateLimitStatus()
       },
 
       // Launcher

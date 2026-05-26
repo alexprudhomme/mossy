@@ -15,6 +15,7 @@ import { IssuePanel } from './IssuePanel'
 import { IssueCardOverlay } from './IssueCard'
 import { useConfig } from '../hooks/useConfig'
 import { useMyIssues } from '../hooks/useMyIssues'
+import { useRateLimit } from '../hooks/useRateLimit'
 import { isIssueDragId, isRepoDropId, extractRepoIdFromDropId, ISSUE_DRAG_PREFIX } from '../hooks/useIssueDrag'
 import { rpc } from '../rpc'
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
@@ -50,6 +51,7 @@ export default function App() {
   }, [config?.issuePanelWidth])
 
   const { issues, loading: issuesLoading, refresh: refreshIssues } = useMyIssues(pollIntervalSec)
+  const { status: rateLimitStatus } = useRateLimit(pollIntervalSec)
 
   useEffect(() => {
     if (config) setOrderedRepos(config.repositories)
@@ -283,6 +285,17 @@ export default function App() {
                     {unauthenticatedDependencies.map((c) =>
                       c.name === 'gh' ? 'gh CLI not authenticated' : c.name === 'jira' ? 'jira CLI not authenticated' : `${c.name} not authenticated`
                     ).join(' | ')}
+                  </div>
+                </div>
+              )}
+              {rateLimitStatus.limited && (
+                <div className="bg-pink-500/10 border border-pink-500/30 text-pink-400 rounded-md px-4 py-3 text-sm">
+                  <div className="font-medium">GitHub API rate limit exceeded</div>
+                  <div className="text-xs">
+                    PR badges are temporarily unavailable.
+                    {rateLimitStatus.resetsAt && (
+                      <> Resets at {new Date(rateLimitStatus.resetsAt).toLocaleTimeString()}.</>
+                    )}
                   </div>
                 </div>
               )}
