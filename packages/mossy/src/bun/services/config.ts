@@ -6,7 +6,7 @@ import { isValidTerminalId } from '../../shared/terminal-registry'
 import type { AppConfig, IssueTracker } from '../../shared/types'
 
 const CONFIG_FILENAME = 'mossy-config.json'
-const MIN_POLL_INTERVAL_SEC = 10
+const MIN_POLL_INTERVAL_SEC = 120
 const MAX_POLL_INTERVAL_SEC = 600
 const MIN_FETCH_INTERVAL_SEC = 60
 const MAX_FETCH_INTERVAL_SEC = 3600
@@ -25,7 +25,7 @@ const DEFAULTS: AppConfig = {
   repositories: [],
   worktreeBasePath: path.join(os.homedir(), 'Developer', 'worktrees'),
   issueTracker: 'none',
-  pollIntervalSec: 60,
+  pollIntervalSec: 120,
   fetchIntervalSec: 300,
   autoUpdateEnabled: true,
   updateCheckIntervalMin: 30,

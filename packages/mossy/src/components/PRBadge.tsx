@@ -45,15 +45,17 @@ export function PRBadge({ pr, loading }: PRBadgeProps) {
     )
   }
 
-  const displayState = pr.isInMergeQueue ? 'MERGE_QUEUE' : pr.isDraft ? 'DRAFT' : pr.state
-  const stateLabel = pr.isInMergeQueue ? 'merge queue' : pr.isDraft ? 'draft' : pr.state.toLowerCase()
+  // Only show draft status for OPEN PRs - closed/merged PRs should show their actual state
+  const isDraftOpen = pr.isDraft && pr.state === 'OPEN'
+  const displayState = pr.isInMergeQueue ? 'MERGE_QUEUE' : isDraftOpen ? 'DRAFT' : pr.state
+  const stateLabel = pr.isInMergeQueue ? 'merge queue' : isDraftOpen ? 'draft' : pr.state.toLowerCase()
   const StateIcon = pr.isInMergeQueue ? IconGitMerge : IconGitPullRequest
 
   return (
     <div className="flex items-center gap-1">
       <button
         onClick={() => window.open(pr.url, '_blank')}
-        title={`${pr.title}${pr.isDraft ? ' (Draft)' : ''}${pr.isInMergeQueue ? ' (Merge Queue)' : ''}`}
+        title={`${pr.title}${isDraftOpen ? ' (Draft)' : ''}${pr.isInMergeQueue ? ' (Merge Queue)' : ''}`}
         className={cn(
           'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border cursor-pointer hover:brightness-125 transition-all',
           STATE_COLORS[displayState]
