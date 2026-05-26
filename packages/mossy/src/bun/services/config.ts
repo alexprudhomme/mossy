@@ -25,7 +25,7 @@ const DEFAULTS: AppConfig = {
   repositories: [],
   worktreeBasePath: path.join(os.homedir(), 'Developer', 'worktrees'),
   issueTracker: 'none',
-  pollIntervalSec: 60,
+  pollIntervalSec: 120,
   fetchIntervalSec: 300,
   autoUpdateEnabled: true,
   updateCheckIntervalMin: 30,

@@ -14,7 +14,7 @@ const DEFAULT_CONFIG: AppConfig = {
   ],
   worktreeBasePath: '~/Developer/worktrees',
   issueTracker: 'none',
-  pollIntervalSec: 60,
+  pollIntervalSec: 120,
   fetchIntervalSec: 300,
   autoUpdateEnabled: false,
   updateCheckIntervalMin: 30,
