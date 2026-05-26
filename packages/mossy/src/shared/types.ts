@@ -119,3 +119,8 @@ export interface MergeConflictInfo {
   conflictFiles: string[]
   targetBranch: string
 }
+
+export interface RateLimitStatus {
+  limited: boolean
+  resetsAt: string | null
+}

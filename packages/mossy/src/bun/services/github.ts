@@ -1,5 +1,7 @@
 import { getShellEnv } from './shell-env'
-import type { PRInfo } from '../../shared/types'
+import type { PRInfo, RateLimitStatus } from '../../shared/types'
+
+let rateLimitStatus: RateLimitStatus = { limited: false, resetsAt: null }
 
 async function gh(args: string[], cwd: string, timeout = 15000): Promise<string> {
   const env = await getShellEnv()
@@ -7,13 +9,65 @@ async function gh(args: string[], cwd: string, timeout = 15000): Promise<string>
 
   const timer = setTimeout(() => proc.kill(), timeout)
   const stdout = await new Response(proc.stdout).text()
+  const stderr = await new Response(proc.stderr).text()
   const exitCode = await proc.exited
   clearTimeout(timer)
+
+  // Detect rate limit from stderr
+  const combinedOutput = `${stdout}\n${stderr}`
+  if (combinedOutput.toLowerCase().includes('rate limit')) {
+    rateLimitStatus = { limited: true, resetsAt: null }
+    // Try to extract reset time by checking rate_limit API
+    void updateRateLimitResetTime(cwd, env)
+    throw new Error('GitHub API rate limit exceeded')
+  }
 
   if (exitCode !== 0) {
     throw new Error(`gh exited with code ${exitCode}`)
   }
+
+  // If we got here, rate limit is not an issue
+  if (rateLimitStatus.limited) {
+    rateLimitStatus = { limited: false, resetsAt: null }
+  }
+
   return stdout
+}
+
+async function updateRateLimitResetTime(cwd: string, env: NodeJS.ProcessEnv): Promise<void> {
+  try {
+    const proc = Bun.spawn(
+      ['gh', 'api', 'rate_limit', '--jq', '.resources.graphql.reset'],
+      { cwd, stdout: 'pipe', stderr: 'pipe', env }
+    )
+    const timer = setTimeout(() => proc.kill(), 5000)
+    const stdout = await new Response(proc.stdout).text()
+    const exitCode = await proc.exited
+    clearTimeout(timer)
+
+    if (exitCode === 0 && stdout.trim()) {
+      const resetTimestamp = parseInt(stdout.trim(), 10)
+      if (!isNaN(resetTimestamp)) {
+        rateLimitStatus = {
+          limited: true,
+          resetsAt: new Date(resetTimestamp * 1000).toISOString()
+        }
+      }
+    }
+  } catch {
+    // Ignore errors when fetching reset time
+  }
+}
+
+export function getRateLimitStatus(): RateLimitStatus {
+  // Check if rate limit has reset
+  if (rateLimitStatus.limited && rateLimitStatus.resetsAt) {
+    const resetTime = new Date(rateLimitStatus.resetsAt).getTime()
+    if (Date.now() > resetTime) {
+      rateLimitStatus = { limited: false, resetsAt: null }
+    }
+  }
+  return rateLimitStatus
 }
 
 async function getMergeQueueStatus(
