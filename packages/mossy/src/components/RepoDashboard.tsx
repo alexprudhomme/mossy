@@ -90,15 +90,15 @@ function RepoSection({
   // Fetch PR data for all feature worktrees (used for sorting + passed to cards)
   const { prMap, loading: prsLoading } = useWorktreePRs(repo.path, featureWorktrees, pollIntervalSec, refreshKey)
 
-  // Auto-sort: Merged → Open PRs → Draft PRs → Closed PRs → No PR → Paused
+  // Auto-sort: Merged → Open PRs → Closed PRs → Draft PRs → No PR → Paused
   const orderedWorktrees = useMemo(() => {
     function sortPriority(wt: Worktree): number {
       if (notReadyWorktrees.includes(wt.path)) return 5 // paused
       const pr = prMap.get(wt.path)
       if (pr && pr.state === 'MERGED') return 0 // merged PR
       if (pr && pr.state === 'OPEN' && !pr.isDraft) return 1 // open PR
-      if (pr && pr.state === 'OPEN' && pr.isDraft) return 2 // draft PR
-      if (pr && pr.state === 'CLOSED') return 3 // closed PR
+      if (pr && pr.state === 'CLOSED') return 2 // closed PR
+      if (pr && pr.state === 'OPEN' && pr.isDraft) return 3 // draft PR
       return 4 // no PR
     }
     return [...featureWorktrees].sort((a, b) => sortPriority(a) - sortPriority(b))
