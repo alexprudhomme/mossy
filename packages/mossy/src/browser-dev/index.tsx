@@ -8,12 +8,17 @@ import App from '../components/App'
 import '../styles/global.css'
 import type { AppConfig } from '../shared/types'
 
+// Generate many repos for scroll testing
+const MANY_REPOS = Array.from({ length: 8 }, (_, i) => ({
+  id: `repo-${i + 1}`,
+  name: `project-${i + 1}`,
+  path: `/Users/dev/projects/project-${i + 1}`,
+}))
+
 const DEFAULT_CONFIG: AppConfig = {
-  repositories: [
-    { id: 'demo-1', name: 'mossy', path: '/Users/dev/mossy' },
-  ],
+  repositories: MANY_REPOS,
   worktreeBasePath: '~/Developer/worktrees',
-  issueTracker: 'none',
+  issueTracker: 'jira',
   pollIntervalSec: 120,
   fetchIntervalSec: 300,
   autoUpdateEnabled: false,
@@ -21,12 +26,22 @@ const DEFAULT_CONFIG: AppConfig = {
   collapsedRepos: [],
   defaultIde: 'vscode',
   defaultTerminal: 'ghostty',
-  issuePanelOpen: false,
+  issuePanelOpen: true,
   issuePanelWidth: 260,
   dismissedDependencyWarning: false,
   zoomLevel: 1,
   notReadyWorktrees: [],
 }
+
+// Generate many mock issues for scroll testing
+const MOCK_ISSUES = Array.from({ length: 20 }, (_, i) => ({
+  key: `KIT-${1000 + i}`,
+  summary: `Issue ${i + 1}: ${['Fix scrolling bug', 'Add new feature', 'Refactor component', 'Update dependencies', 'Write documentation'][i % 5]}`,
+  status: ['In Progress', 'In Review', 'Accepted', 'On Hold', 'Merged', 'New', 'Upcoming', 'Done', 'Ready for implementation', 'In Progress'][i % 10],
+  assignee: 'dev-user',
+  issueType: ['Bug', 'Story', 'Task'][i % 3],
+  url: `https://coveord.atlassian.net/browse/KIT-${1000 + i}`,
+}))
 
 // Mock diffs keyed by file path for realistic testing
 const MOCK_DIFFS: Record<string, string> = {
@@ -142,16 +157,28 @@ function mockUnstage(filePaths: string[]) {
 const stubRpc = new Proxy({}, {
   get: (_target, prop) => {
     return async (...args: unknown[]) => {
+      const payload = args[0] as Record<string, unknown> | undefined
+      const repoPath = (payload?.repoPath ?? payload?.worktreePath ?? '') as string
+
+      // Generate worktrees per repo for realistic scroll testing
+      const worktreesForRepo = (basePath: string) => {
+        const repoName = basePath.split('/').pop() ?? 'repo'
+        return [
+          { branch: 'main', path: basePath, isMainWorktree: true },
+          ...Array.from({ length: 5 }, (_, i) => ({
+            branch: `feature/${repoName}-${i + 1}`,
+            path: `/Users/dev/worktrees/${repoName}/feature-${i + 1}`,
+            isMainWorktree: false,
+          })),
+        ]
+      }
+
       switch (prop) {
         case 'config:get': return DEFAULT_CONFIG
         case 'config:set': return
         case 'config:getCollapsed': return []
         case 'config:setCollapsed': return
-        case 'git:worktrees': return [
-          { branch: 'main', path: '/Users/dev/mossy', isMainWorktree: true },
-          { branch: 'feature/diff-panel', path: '/Users/dev/worktrees/mossy/feature-diff-panel', isMainWorktree: false },
-          { branch: 'fix/styling-bugs', path: '/Users/dev/worktrees/mossy/fix-styling-bugs', isMainWorktree: false },
-        ]
+        case 'git:worktrees': return worktreesForRepo(repoPath)
         case 'git:defaultBranch': return 'main'
         case 'git:remoteBranches': return []
         case 'git:status': return {
@@ -160,34 +187,35 @@ const stubRpc = new Proxy({}, {
           untracked: [...mockGitState.untracked],
         }
         case 'git:diff': {
-          const payload = args[0] as { filePath?: string } | undefined
-          const filePath = payload?.filePath ?? ''
+          const filePath = (payload?.filePath ?? '') as string
           return MOCK_DIFFS[filePath] ?? ''
         }
         case 'git:stage': {
-          const payload = args[0] as { filePaths?: string[] } | undefined
-          if (payload?.filePaths) mockStage(payload.filePaths)
+          if (payload?.filePaths) mockStage(payload.filePaths as string[])
           return
         }
         case 'git:unstage': {
-          const payload = args[0] as { filePaths?: string[] } | undefined
-          if (payload?.filePaths) mockUnstage(payload.filePaths)
+          if (payload?.filePaths) mockUnstage(payload.filePaths as string[])
           return
         }
         case 'git:commit': return { success: true }
         case 'git:push': return { success: true }
+        case 'git:pull': return { success: true }
         case 'git:branchInfo': return { name: 'feature/diff-panel', ahead: 2, behind: 0, hasUpstream: true }
         case 'git:worktreeStatus': return { hasUncommittedChanges: true, unpushedCommits: 2, unpulledCommits: 0, linesAdded: 42, linesDeleted: 7 }
-        case 'git:mergeConflicts': return { hasConflicts: true, conflictCount: 2, conflictFiles: ['src/components/App.tsx', 'package.json'], targetBranch: 'main' }
+        case 'git:mergeConflicts': return { hasConflicts: false, conflictCount: 0, conflictFiles: [], targetBranch: 'main' }
         case 'gh:pr': return { number: 42, url: 'https://github.com/example/mossy/pull/42', title: 'feat: example PR', state: 'OPEN', isDraft: false, reviewDecision: 'APPROVED', ciStatus: 'SUCCESS', ciFailed: 0, ciTotal: 3 }
         case 'gh:rateLimit': return { limited: false, resetsAt: null }
-        case 'issues:mine': return []
+        case 'issues:mine': return MOCK_ISSUES
         case 'system:homedir': return '/Users/dev'
         case 'dialog:openDirectory': return prompt('Enter folder path:') || null
         case 'system:dependencies': return { checkedAt: new Date().toISOString(), checks: [] }
         case 'app:version': return '0.0.0-dev'
         case 'app:toggleZoom': return
+        case 'app:quit': return
+        case 'app:closeWindow': return
         case 'app:checkForUpdates': return { success: true, updateAvailable: false }
+        case 'git:fetch': return { success: true }
         default: return null
       }
     }
