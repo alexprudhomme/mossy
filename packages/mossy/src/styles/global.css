@@ -63,6 +63,10 @@
     -webkit-font-smoothing: antialiased;
     user-select: none;
   }
+
+  html, body, #root {
+    height: 100%;
+  }
 }
 
 .titlebar-drag {

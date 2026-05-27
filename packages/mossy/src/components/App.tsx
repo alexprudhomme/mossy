@@ -214,7 +214,7 @@ export default function App() {
 
   if (loading || !config) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-background">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-background">
         <span className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
         <span className="text-sm text-muted-foreground mt-3">Loading…</span>
       </div>
@@ -225,7 +225,7 @@ export default function App() {
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
-      <div className="flex flex-col h-screen bg-background text-foreground">
+      <div className="fixed inset-0 flex flex-col bg-background text-foreground">
         {/* Header / Title bar */}
         <header
           className="flex items-center justify-end h-[38px] px-4 border-b border-primary/15 shrink-0 select-none electrobun-webkit-app-region-drag"
@@ -256,7 +256,7 @@ export default function App() {
 
         {/* Main content */}
         <div className="flex flex-1 min-h-0">
-          <main className="flex-1 overflow-auto p-4">
+          <main className="flex-1 overflow-auto p-4 min-h-0">
             <div className="flex flex-col gap-4">
               {missingDependencies.length > 0 && !config.dismissedDependencyWarning && (
                 <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-md px-4 py-3 text-sm relative">
@@ -318,7 +318,7 @@ export default function App() {
           </main>
 
           {showIssuePanel && (
-            <aside className="border-l border-primary/15 shrink-0" style={{ width: panelWidth }}>
+            <aside className="relative border-l border-primary/15 shrink-0 flex flex-col min-h-0" style={{ width: panelWidth }}>
               <IssuePanel
                 issues={issues}
                 loading={issuesLoading}
