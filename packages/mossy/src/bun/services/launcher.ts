@@ -43,6 +43,15 @@ export async function launchTerminal(terminalId: TerminalId, worktreePath: strin
   }
 }
 
+export async function launchGitHubDesktop(worktreePath: string): Promise<void> {
+  const env = await getShellEnv()
+  Bun.spawn(['open', '-a', 'GitHub Desktop', worktreePath], {
+    stdout: 'ignore',
+    stderr: 'ignore',
+    env
+  })
+}
+
 export async function launchURL(url: string): Promise<void> {
   const proc = Bun.spawn(['/usr/bin/open', url], {
     stdout: 'pipe',
