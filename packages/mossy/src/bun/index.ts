@@ -26,7 +26,7 @@ import {
 } from './services/git'
 import { getPRForBranch, getRateLimitStatus } from './services/github'
 import { getCurrentIssue, getMyIssues } from './services/issue-dispatcher'
-import { launchIde, launchTerminal, launchURL } from './services/launcher'
+import { launchIde, launchTerminal, launchGitHubDesktop, launchURL } from './services/launcher'
 import pkg from '../../package.json'
 import type { MossyRPC } from '../shared/rpc-types'
 import type { AppConfig, DependencyStatus } from '../shared/types'
@@ -258,6 +258,9 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
       },
       'launch:terminal': ({ terminalId, worktreePath }) => {
         launchTerminal(terminalId, worktreePath)
+      },
+      'launch:githubDesktop': async ({ worktreePath }) => {
+        await launchGitHubDesktop(worktreePath)
       },
       'launch:url': async ({ url }) => {
         if (Utils.openExternal(url)) {

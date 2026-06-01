@@ -215,6 +215,7 @@ const stubRpc = new Proxy({}, {
         case 'app:quit': return
         case 'app:closeWindow': return
         case 'app:checkForUpdates': return { success: true, updateAvailable: false }
+        case 'launch:githubDesktop': return
         case 'git:fetch': return { success: true }
         default: return null
       }

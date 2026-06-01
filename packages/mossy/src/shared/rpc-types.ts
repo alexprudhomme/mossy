@@ -143,6 +143,10 @@ export type MossyRPC = {
         params: { terminalId: TerminalId; worktreePath: string }
         response: void
       }
+      'launch:githubDesktop': {
+        params: { worktreePath: string }
+        response: void
+      }
       'launch:url': {
         params: { url: string }
         response: { success: boolean; error?: string }

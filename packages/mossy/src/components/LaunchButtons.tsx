@@ -1,3 +1,4 @@
+import { IconBrandGithub } from '@tabler/icons-react'
 import { IdeIcon } from './IdeIcon'
 import { TerminalIcon } from './TerminalIcon'
 import { IDE_REGISTRY } from '../shared/ide-registry'
@@ -42,6 +43,13 @@ export function LaunchButtons({ worktreePath, defaultIde, defaultTerminal }: Lau
         className={`inline-flex items-center justify-center p-1 rounded-md text-muted-foreground hover:bg-accent ${terminalHoverColor} transition-colors`}
       >
         <TerminalIcon terminal={defaultTerminal} size={16} />
+      </button>
+      <button
+        onClick={() => rpc().request['launch:githubDesktop']({ worktreePath })}
+        title="Open in GitHub Desktop"
+        className="inline-flex items-center justify-center p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-purple-400 transition-colors"
+      >
+        <IconBrandGithub size={16} />
       </button>
     </div>
   )
