@@ -1,5 +1,11 @@
 # mossy
 
+## 0.8.4
+
+### Patch Changes
+
+- b50fc0b: Add a "Open in GitHub Desktop" button to each worktree card for quick access to diffs and GitHub Desktop operations.
+
 ## 0.8.3
 
 ### Patch Changes
