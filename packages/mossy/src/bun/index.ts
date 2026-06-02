@@ -69,8 +69,8 @@ function configureAutoUpdateSchedule(config: AppConfig): void {
   }, intervalMin * 60_000)
 }
 
-async function promptToRestartForUpdate(): Promise<void> {
-  if (isUpdatePromptOpen) return
+async function promptToRestartForUpdate(): Promise<'applied' | 'dismissed' | 'apply-failed'> {
+  if (isUpdatePromptOpen) return 'dismissed'
 
   isUpdatePromptOpen = true
   try {
@@ -85,8 +85,14 @@ async function promptToRestartForUpdate(): Promise<void> {
     })
 
     if (response === 0) {
-      await Updater.applyUpdate()
+      try {
+        await Updater.applyUpdate()
+        return 'applied'
+      } catch {
+        return 'apply-failed'
+      }
     }
+    return 'dismissed'
   } finally {
     isUpdatePromptOpen = false
   }
@@ -119,7 +125,10 @@ async function checkForAppUpdate(): Promise<UpdateCheckResult> {
       }
     }
 
-    await promptToRestartForUpdate()
+    const promptResult = await promptToRestartForUpdate()
+    if (promptResult === 'apply-failed') {
+      return { success: false, updateAvailable: true, error: 'Failed to apply update. Try restarting the app manually.' }
+    }
     return { success: true, updateAvailable: true }
   } catch {
     return { success: false, updateAvailable: false, error: 'Failed to check for updates' }
