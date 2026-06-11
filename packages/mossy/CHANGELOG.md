@@ -1,5 +1,15 @@
 # mossy
 
+## 0.9.0
+
+### Minor Changes
+
+- 5cc298d: Sort approved open PRs above non-approved open PRs in the worktree list.
+
+### Patch Changes
+
+- aa3c4f2: Fix misleading "Failed to check for updates" error when applyUpdate throws after the restart dialog is shown. Now properly catches apply failures and shows a specific error message instead of the generic check failure.
+
 ## 0.8.4
 
 ### Patch Changes
