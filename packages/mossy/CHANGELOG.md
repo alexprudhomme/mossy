@@ -1,5 +1,12 @@
 # mossy
 
+## 0.10.0
+
+### Minor Changes
+
+- b40e013: Add Kiro as editor option
+  Adjust Cursor brand color
+
 ## 0.9.0
 
 ### Minor Changes
