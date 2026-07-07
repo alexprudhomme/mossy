@@ -8,7 +8,8 @@ import type { IdeId, TerminalId } from '../shared/types'
 
 const IDE_HOVER_COLOR: Record<string, string> = {
   blue: 'hover:text-blue-400',
-  violet: 'hover:text-violet-400',
+  sky: 'hover:text-sky-400',
+  purple: 'hover:text-purple-400',
   orange: 'hover:text-orange-400',
   cyan: 'hover:text-cyan-400',
   lime: 'hover:text-lime-400',
