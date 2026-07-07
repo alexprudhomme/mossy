@@ -9,14 +9,15 @@ export interface IdeDefinition {
 
 export const IDE_REGISTRY: Record<IdeId, IdeDefinition> = {
   vscode: { id: 'vscode', label: 'VS Code', command: ['code'], color: 'blue' },
-  cursor: { id: 'cursor', label: 'Cursor', command: ['cursor'], color: 'violet' },
+  cursor: { id: 'cursor', label: 'Cursor', command: ['cursor'], color: 'sky' },
+  kiro: { id: 'kiro', label: 'Kiro', command: ['kiro'], color: 'purple' },
   intellij: { id: 'intellij', label: 'IntelliJ IDEA', command: ['idea'], color: 'orange' },
   webstorm: { id: 'webstorm', label: 'WebStorm', command: ['webstorm'], color: 'cyan' },
   zed: { id: 'zed', label: 'Zed', command: ['zed'], color: 'lime' },
   sublime: { id: 'sublime', label: 'Sublime Text', command: ['subl'], color: 'yellow' }
 }
 
-export const IDE_OPTIONS: IdeId[] = ['vscode', 'cursor', 'intellij', 'webstorm', 'zed', 'sublime']
+export const IDE_OPTIONS: IdeId[] = ['vscode', 'cursor', 'kiro', 'intellij', 'webstorm', 'zed', 'sublime']
 
 export function isValidIdeId(value: unknown): value is IdeId {
   return typeof value === 'string' && value in IDE_REGISTRY
