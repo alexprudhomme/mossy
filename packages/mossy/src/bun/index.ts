@@ -26,6 +26,12 @@ import {
 } from './services/git'
 import { getPRForBranch, getRateLimitStatus } from './services/github'
 import { getCurrentIssue, getMyIssues } from './services/issue-dispatcher'
+import {
+  getJiraEpics,
+  getJiraCurrentUser,
+  getJiraProject,
+  createJiraIssue
+} from './services/jira'
 import { launchIde, launchTerminal, launchGitHubDesktop, launchURL } from './services/launcher'
 import pkg from '../../package.json'
 import type { MossyRPC } from '../shared/rpc-types'
@@ -249,6 +255,20 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
       },
       'issues:mine': async () => {
         return getMyIssues()
+      },
+
+      // Jira creation
+      'jira:epics': async () => {
+        return getJiraEpics()
+      },
+      'jira:me': async () => {
+        return getJiraCurrentUser()
+      },
+      'jira:project': async () => {
+        return getJiraProject()
+      },
+      'jira:createIssue': async (params) => {
+        return createJiraIssue(params)
       },
 
       // GitHub PR
