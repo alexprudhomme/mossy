@@ -1,5 +1,7 @@
-import { IconRefresh } from '@tabler/icons-react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { IconRefresh, IconPlus } from '@tabler/icons-react'
 import { IssueCard } from './IssueCard'
+import { CreateJiraTicketForm } from './CreateJiraTicketForm'
 import { ScrollArea } from './ui/scroll-area'
 import type { Issue, IssueTracker } from '../shared/types'
 
@@ -38,6 +40,15 @@ function sortIssues(issues: Issue[]): Issue[] {
 }
 
 export function IssuePanel({ issues, loading, onRefresh, onResize, issueTracker }: IssuePanelProps) {
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
+  }, [])
+
   const handleResizeMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
     const startX = e.clientX
@@ -59,6 +70,12 @@ export function IssuePanel({ issues, loading, onRefresh, onResize, issueTracker 
 
   const trackerLabel = issueTracker === 'jira' ? 'Jira' : issueTracker === 'github' ? 'GitHub' : 'Issues'
 
+  const handleCreated = useCallback(() => {
+    setShowCreateForm(false)
+    // Give Jira a moment to index the new issue before refreshing
+    timerRef.current = setTimeout(() => onRefresh(), 2000)
+  }, [onRefresh])
+
   return (
     <>
       {/* Resize handle */}
@@ -72,17 +89,28 @@ export function IssuePanel({ issues, loading, onRefresh, onResize, issueTracker 
         <span className="text-[10px] font-semibold text-[#484f58] uppercase tracking-wider">
           My {trackerLabel} Issues
         </span>
-        <button
-          onClick={onRefresh}
-          className="inline-flex items-center justify-center p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-primary transition-colors"
-          disabled={loading}
-        >
-          {loading ? (
-            <span className="animate-spin h-3.5 w-3.5 border border-muted-foreground border-t-transparent rounded-full inline-block" />
-          ) : (
-            <IconRefresh size={14} />
+        <div className="flex items-center gap-0.5">
+          {issueTracker === 'jira' && (
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="inline-flex items-center justify-center p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-primary transition-colors"
+              aria-label="Create Jira ticket"
+            >
+              <IconPlus size={14} />
+            </button>
           )}
-        </button>
+          <button
+            onClick={onRefresh}
+            className="inline-flex items-center justify-center p-1 rounded-md text-muted-foreground hover:bg-accent hover:text-primary transition-colors"
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="animate-spin h-3.5 w-3.5 border border-muted-foreground border-t-transparent rounded-full inline-block" />
+            ) : (
+              <IconRefresh size={14} />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Scroll wrapper: flex-1 + relative creates a sized box; absolute child fills it */}
@@ -107,6 +135,18 @@ export function IssuePanel({ issues, loading, onRefresh, onResize, issueTracker 
           </div>
         )}
       </div>
+
+      {/* Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="create-jira-ticket-title">
+          <div className="bg-card rounded-lg border shadow-lg max-w-md w-full mx-4 overflow-visible">
+            <CreateJiraTicketForm
+              onClose={() => setShowCreateForm(false)}
+              onCreated={handleCreated}
+            />
+          </div>
+        </div>
+      )}
     </>
   )
 }
