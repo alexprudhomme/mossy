@@ -56,7 +56,7 @@ interface CreateJiraTicketFormProps {
 **Rendering details:**
 - Rendered within a modal container with `min-h-[320px]` and `overflow-visible`
 - The modal overlay has `role="dialog"`, `aria-modal="true"`, and `aria-labelledby="create-jira-ticket-title"`
-- Escape key calls `handleCancel` (respects dirty-state confirmation)
+- Escape key calls `handleCancel` (closes immediately)
 - Issue type is hardcoded to "User Story" — no work type selector is rendered
 
 **Responsibilities:**
@@ -64,7 +64,6 @@ interface CreateJiraTicketFormProps {
 - Displays resolved project name and assignee (read-only)
 - Displays error banners for authentication/config errors inside the form
 - Handles form validation (summary checked on submit; inline error clearing)
-- Manages dirty-state tracking for the cancel-confirmation flow
 - Delegates all Jira communication to the `useCreateJiraTicket` hook
 
 ### Component: `IssuePanel` (modified)
@@ -185,17 +184,13 @@ Each function follows the existing pattern: spawn the `jira` CLI with the shell 
 ### Form validation utilities (in `src/utils/jira-form-validation.ts`)
 
 ```typescript
-interface FormState {
-  summary: string
-  epicKey: string | null
-}
-
 function validateSummary(value: string): string | null
 function trimSummary(value: string): string
 function truncateTo255(value: string): string
 function validateForm(fields: { summary: string }): Record<string, string>
-function isDirty(current: FormState, defaults: FormState): boolean
 ```
+
+> **Note:** `isDirty` and `FormState` are still exported from this module but are no longer used by the form component (the dirty-state cancel confirmation flow has been removed).
 
 ### Epic filtering utility (in `src/utils/jira-epic-filter.ts`)
 
@@ -237,12 +232,6 @@ function filterEpics(epics: JiraEpic[], query: string): JiraEpic[]
 
 **Validates: Requirements 8.1**
 
-### Property 6: Dirty-state detection for cancel confirmation
-
-*For any* form state where at least one field differs from its default value (`summary: ''`, `epicKey: null`), clicking "Cancel" SHALL trigger a confirmation prompt. For any form state where all fields equal their defaults, clicking "Cancel" SHALL close immediately.
-
-**Validates: Requirements 2.3, 2.4**
-
 ## Error Handling
 
 | Scenario | User-visible behavior |
@@ -252,7 +241,7 @@ function filterEpics(epics: JiraEpic[], query: string): JiraEpic[]
 | Project key not found in config | Error banner "Jira project not configured" displayed in form; "Create" button disabled |
 | Ticket creation fails (CLI error) | Error banner inside form with CLI message; form data preserved; controls re-enabled |
 | Ticket creation times out (30s) | Timeout error displayed; form data preserved; controls re-enabled |
-| Modal dismissed via Escape | Triggers dirty-state cancel flow (confirmation if dirty, immediate close if clean) |
+| Modal dismissed via Escape | Closes the form immediately |
 
 All errors from the Bun process are returned as typed `{ error: string }` responses rather than thrown exceptions, following the existing pattern in the Jira service.
 
@@ -262,7 +251,6 @@ All errors from the Bun process are returned as typed `{ error: string }` respon
 
 - **Form validation logic** (`jira-form-validation.test.ts`): test that empty/whitespace summaries are rejected, max-length is enforced, trim is applied before submission.
 - **Epic filtering** (`jira-epic-filter.test.ts`): test case-insensitive substring matching on key + summary.
-- **Dirty-state detection**: test that modifications to any field from default correctly flag form as dirty.
 - **Component rendering**: test that "+" button only appears for `jira` tracker.
 
 ### Property-Based Tests
@@ -281,7 +269,6 @@ Tests to implement:
 3. Property 3 — Generate valid summaries with leading/trailing whitespace → assert trim
 4. Property 4 — Generate random epic lists and query strings → assert filter correctness
 5. Property 5 — Generate random combinations of invalid field values → assert all errors shown
-6. Property 6 — Generate field state permutations → assert dirty detection
 
 ### Integration / RPC Tests
 

@@ -35,10 +35,9 @@ This feature adds the ability to create a new Jira ticket directly from the "MY 
 
 1. WHEN the Creation_Form is opened, THE Creation_Form SHALL appear as a centered modal dialog and display the following fields in top-to-bottom order: Summary_Field text input, and Parent_Epic searchable dropdown.
 2. WHEN the Creation_Form is opened, THE Creation_Form SHALL display a "Create" submit button (initially enabled) and a "Cancel" button.
-3. WHEN the user clicks the "Cancel" button and no field has been modified from its default state, THE Creation_Form SHALL close immediately and return the user to the Issue_Panel view.
-4. WHEN the user clicks the "Cancel" button and at least one field has been modified from its default state, THE Creation_Form SHALL display a confirmation prompt before discarding changes and closing.
-5. THE Creation_Form modal SHALL be dismissible via the Escape key (respecting the dirty-state confirmation flow from AC 3/4) but SHALL NOT close when clicking outside the modal.
-6. THE Creation_Form modal SHALL have `role="dialog"`, `aria-modal="true"`, and be labeled by the form header via `aria-labelledby` for accessibility.
+3. WHEN the user clicks the "Cancel" button, THE Creation_Form SHALL close immediately.
+4. THE Creation_Form modal SHALL be dismissible via the Escape key, which closes the form immediately. The modal SHALL NOT close when clicking outside.
+5. THE Creation_Form modal SHALL have `role="dialog"`, `aria-modal="true"`, and be labeled by the form header via `aria-labelledby` for accessibility.
 
 ### Requirement 3: Issue Type
 
