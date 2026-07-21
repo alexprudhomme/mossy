@@ -124,3 +124,22 @@ export interface RateLimitStatus {
   limited: boolean
   resetsAt: string | null
 }
+
+// Jira ticket creation types
+export interface JiraEpic {
+  key: string
+  summary: string
+}
+
+export interface CreateJiraIssueParams {
+  /** Currently always 'User Story' — kept as string for future flexibility */
+  issueType: string
+  summary: string
+  epicKey?: string
+}
+
+export interface CreateJiraIssueResult {
+  success: boolean
+  issueKey?: string
+  error?: string
+}
