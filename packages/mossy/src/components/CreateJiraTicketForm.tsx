@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { IconAlertCircle } from '@tabler/icons-react'
 import { useCreateJiraTicket } from '../hooks/useCreateJiraTicket'
-import { validateForm, trimSummary, truncateTo255, isDirty, type FormState } from '../utils/jira-form-validation'
+import { validateForm, trimSummary, truncateTo255 } from '../utils/jira-form-validation'
 import { filterEpics } from '../utils/jira-epic-filter'
 
 interface CreateJiraTicketFormProps {
@@ -33,12 +33,6 @@ export function CreateJiraTicketForm({ onClose, onCreated }: CreateJiraTicketFor
   // Submission error banner
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  // Cancel confirmation
-  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
-
-  // Track default state for dirty detection
-  const [defaults] = useState<FormState>({ summary: '', epicKey: null })
-
   // Ref for closing epic dropdown on outside click
   const epicDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -52,13 +46,6 @@ export function CreateJiraTicketForm({ onClose, onCreated }: CreateJiraTicketFor
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
-
-  const currentFormState: FormState = useMemo(() => ({
-    summary,
-    epicKey
-  }), [summary, epicKey])
-
-  const formIsDirty = isDirty(currentFormState, defaults)
 
   const hasBlockingError = !!(currentUserError || projectError)
 
@@ -86,12 +73,8 @@ export function CreateJiraTicketForm({ onClose, onCreated }: CreateJiraTicketFor
   }, [])
 
   const handleCancel = useCallback(() => {
-    if (formIsDirty) {
-      setShowCancelConfirm(true)
-    } else {
-      onClose()
-    }
-  }, [formIsDirty, onClose])
+    onClose()
+  }, [onClose])
 
   // Close on Escape key
   useEffect(() => {
@@ -103,11 +86,6 @@ export function CreateJiraTicketForm({ onClose, onCreated }: CreateJiraTicketFor
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [handleCancel])
-
-  const handleConfirmCancel = useCallback(() => {
-    setShowCancelConfirm(false)
-    onClose()
-  }, [onClose])
 
   const handleSubmit = useCallback(async () => {
     // Validate all fields
@@ -260,28 +238,6 @@ export function CreateJiraTicketForm({ onClose, onCreated }: CreateJiraTicketFor
             )}
           </div>
 
-          {/* Cancel confirmation prompt */}
-          {showCancelConfirm && (
-            <div className="bg-primary/10 border border-primary/30 rounded-md px-3 py-2 text-xs text-foreground">
-              <p className="mb-2">You have unsaved changes. Discard and close?</p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="px-2 py-1 rounded text-[11px] bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
-                  onClick={handleConfirmCancel}
-                >
-                  Discard
-                </button>
-                <button
-                  type="button"
-                  className="px-2 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  onClick={() => setShowCancelConfirm(false)}
-                >
-                  Keep editing
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
