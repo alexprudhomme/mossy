@@ -29,7 +29,7 @@ export function DeleteWorktreeModal({ worktree, opened, onClose, onConfirm }: De
 
   if (!opened) return null
 
-  const hasWarnings = status?.hasUncommittedChanges || (status?.unpushedCommits ?? 0) > 0
+  const hasWarnings = status?.hasUncommittedChanges || status?.statusCheckFailed || (status?.unpushedCommits ?? 0) > 0
 
   const handleDelete = () => {
     onConfirm(!!hasWarnings)
@@ -56,6 +56,12 @@ export function DeleteWorktreeModal({ worktree, opened, onClose, onConfirm }: De
 
           {!loadingStatus && status && (
             <>
+              {status.statusCheckFailed && (
+                <div className="bg-warning/10 border border-warning/30 text-warning rounded-md px-3 py-2 text-xs flex items-start gap-2">
+                  <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  <span>Could not determine whether this worktree has uncommitted changes. Proceed with caution.</span>
+                </div>
+              )}
               {status.hasUncommittedChanges && (
                 <div className="bg-warning/10 border border-warning/30 text-warning rounded-md px-3 py-2 text-xs flex items-start gap-2">
                   <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
