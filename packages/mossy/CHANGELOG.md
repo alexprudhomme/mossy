@@ -1,5 +1,11 @@
 # mossy
 
+## 0.11.1
+
+### Patch Changes
+
+- 4bfbbf1: Show an accurate caution when Mossy cannot determine a worktree's status instead of incorrectly reporting uncommitted changes.
+
 ## 0.11.0
 
 ### Minor Changes
