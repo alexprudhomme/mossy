@@ -2,11 +2,14 @@ import type { RPCSchema } from 'electrobun/bun'
 import type {
   AppConfig,
   BranchInfo,
+  CreateJiraIssueParams,
+  CreateJiraIssueResult,
   DependencyStatus,
   GitResult,
   GitStatus,
   IdeId,
   Issue,
+  JiraEpic,
   MergeConflictInfo,
   PRInfo,
   RateLimitStatus,
@@ -122,6 +125,24 @@ export type MossyRPC = {
       'issues:mine': {
         params: Record<string, never>
         response: Issue[]
+      }
+
+      // Jira
+      'jira:epics': {
+        params: Record<string, never>
+        response: { epics: JiraEpic[] } | { error: string }
+      }
+      'jira:me': {
+        params: Record<string, never>
+        response: { user: string } | { error: string }
+      }
+      'jira:project': {
+        params: Record<string, never>
+        response: { projectKey: string } | { error: string }
+      }
+      'jira:createIssue': {
+        params: CreateJiraIssueParams
+        response: CreateJiraIssueResult
       }
 
       // GitHub PR
