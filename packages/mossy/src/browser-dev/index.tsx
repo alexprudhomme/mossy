@@ -202,7 +202,7 @@ const stubRpc = new Proxy({}, {
         case 'git:push': return { success: true }
         case 'git:pull': return { success: true }
         case 'git:branchInfo': return { name: 'feature/diff-panel', ahead: 2, behind: 0, hasUpstream: true }
-        case 'git:worktreeStatus': return { hasUncommittedChanges: true, unpushedCommits: 2, unpulledCommits: 0, linesAdded: 42, linesDeleted: 7 }
+        case 'git:worktreeStatus': return { hasUncommittedChanges: true, statusCheckFailed: false, unpushedCommits: 2, unpulledCommits: 0, linesAdded: 42, linesDeleted: 7 }
         case 'git:mergeConflicts': return { hasConflicts: false, conflictCount: 0, conflictFiles: [], targetBranch: 'main' }
         case 'gh:pr': return { number: 42, url: 'https://github.com/example/mossy/pull/42', title: 'feat: example PR', state: 'OPEN', isDraft: false, reviewDecision: 'APPROVED', ciStatus: 'SUCCESS', ciFailed: 0, ciTotal: 3 }
         case 'gh:rateLimit': return { limited: false, resetsAt: null }

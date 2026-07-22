@@ -61,6 +61,7 @@ export interface PRInfo {
 
 export interface WorktreeStatus {
   hasUncommittedChanges: boolean
+  statusCheckFailed: boolean
   unpushedCommits: number
   unpulledCommits: number
   linesAdded: number
