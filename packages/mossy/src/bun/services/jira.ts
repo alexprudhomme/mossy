@@ -15,7 +15,10 @@ export async function getMyJiraIssues(): Promise<Issue[]> {
     const proc = Bun.spawn([
       'jira', 'issue', 'list',
       `--assignee=${me}`,
-      '-qproject IS NOT EMPTY',
+      // Exclude done issues in JQL rather than client-side: jira-cli caps
+      // --paginate at 100 results, so filtering after the fact would drop
+      // older open issues (including sub-tasks) out of the window.
+      '-qproject IS NOT EMPTY AND statusCategory != Done',
       '--paginate', '0:100',
       '--raw'
     ], {
