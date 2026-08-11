@@ -1,5 +1,11 @@
 # mossy
 
+## 0.11.2
+
+### Patch Changes
+
+- b75dfce: Filter out done Jira issues in the JQL query so older open issues, such as sub-tasks, are no longer pushed out of the 100-issue page limit.
+
 ## 0.11.1
 
 ### Patch Changes
