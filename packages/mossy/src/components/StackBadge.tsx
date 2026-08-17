@@ -9,13 +9,11 @@ interface StackBadgeProps {
 }
 
 export function StackBadge({ stack, position, total }: StackBadgeProps) {
-  const label = stack.number !== null ? `Stack #${stack.number}` : 'Stack'
-
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium bg-violet-500/15 text-violet-300 border border-violet-500/30 cursor-default"
       title={[
-        `${label} — layer ${position} of ${total}`,
+        `Stack layer ${position} of ${total}`,
         `Trunk: ${stack.trunkBranch}`,
         '',
         ...stack.branches.map((branch, index) => {

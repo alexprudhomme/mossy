@@ -16,7 +16,6 @@ interface StackGroupProps {
  * appears first.
  */
 export function StackGroup({ stack, entries, renderCard }: StackGroupProps) {
-  const label = stack.number !== null ? `Stack #${stack.number}` : 'Stack'
   const prCount = stack.branches.filter((branch) => branch.prNumber !== null).length
   const missingCount = entries.filter((entry) => entry.worktree === null).length
 
@@ -24,7 +23,7 @@ export function StackGroup({ stack, entries, renderCard }: StackGroupProps) {
     <div className="rounded-lg border border-violet-500/25 bg-violet-500/[0.03] px-3 pb-3 pt-2">
       <div className="flex items-center gap-1.5 pb-2 min-w-0">
         <IconStack2 size={14} className="text-violet-300 shrink-0" />
-        <span className="text-xs font-semibold text-violet-300 shrink-0">{label}</span>
+        <span className="text-xs font-semibold text-violet-300 shrink-0">Stack</span>
         <span className="text-[#484f58]">·</span>
         <span className="text-xs text-muted-foreground shrink-0">
           {entries.length} layer{entries.length === 1 ? '' : 's'}
