@@ -52,6 +52,8 @@ function RepoSection({
   const [addOpened, setAddOpened] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const [pulling, setPulling] = useState(false)
+  const [creatingBranches, setCreatingBranches] = useState<Set<string>>(new Set())
+  const [createError, setCreateError] = useState<string | null>(null)
   const { attributes, listeners, setNodeRef: setSortableNodeRef, transform, transition, isDragging } = useSortable({ id: repo.id })
   const { setNodeRef: setDroppableNodeRef, isOver: isOverDroppable } = useDroppable({ id: makeRepoDropId(repo.id) })
   const { shortenPath } = useHomedir()
@@ -144,6 +146,43 @@ function RepoSection({
     const commands = repo.setupCommands ?? []
     if (commands.length > 0) void startSetup(worktreePath, commands)
   }
+
+  // Create a worktree for a stack layer that has none yet. The branch already
+  // exists (it has a PR), so git resolves it locally or DWIMs the remote one.
+  const handleCreateStackWorktree = useCallback(async (branch: string) => {
+    setCreatingBranches((prev) => {
+      if (prev.has(branch)) return prev
+      return new Set(prev).add(branch)
+    })
+    setCreateError(null)
+
+    try {
+      const result = await rpc().request['git:addWorktree']({
+        repoPath: repo.path,
+        repoName: repo.name,
+        branch,
+        isNewBranch: false
+      })
+
+      if (result.success) {
+        await refresh()
+        const commands = repo.setupCommands ?? []
+        if (result.worktreePath && commands.length > 0) {
+          void startSetup(result.worktreePath, commands)
+        }
+      } else {
+        setCreateError(result.error || `Failed to create a worktree for ${branch}`)
+      }
+    } catch (err: unknown) {
+      setCreateError(err instanceof Error ? err.message : `Failed to create a worktree for ${branch}`)
+    } finally {
+      setCreatingBranches((prev) => {
+        const next = new Set(prev)
+        next.delete(branch)
+        return next
+      })
+    }
+  }, [repo.path, repo.name, repo.setupCommands, refresh, startSetup])
 
   if (!loading && worktrees.length === 0) return null
 
@@ -268,6 +307,13 @@ function RepoSection({
               <button onClick={clearDeleteError} className="text-pink-400 hover:text-pink-300"><IconX size={14} /></button>
             </div>
           )}
+          {createError && (
+            <div className="bg-pink-500/10 border border-pink-500/30 text-pink-400 rounded-md px-3 py-2 text-sm flex items-start gap-2">
+              <IconAlertCircle size={16} className="mt-0.5 shrink-0" />
+              <span className="flex-1">{createError}</span>
+              <button onClick={() => setCreateError(null)} className="text-pink-400 hover:text-pink-300"><IconX size={14} /></button>
+            </div>
+          )}
           {setupError && (
             <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-md px-3 py-2 text-sm">
               <div className="font-medium mb-1">Setup failed for {setupError.worktreeName}</div>
@@ -299,6 +345,8 @@ function RepoSection({
                       stack={row.stack}
                       entries={row.entries}
                       renderCard={(entry: StackEntry) => renderWorktreeCard(entry.worktree as Worktree)}
+                      onCreateWorktree={handleCreateStackWorktree}
+                      creatingBranches={creatingBranches}
                     />
                   )
               ))}
