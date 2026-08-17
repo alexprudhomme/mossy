@@ -8,15 +8,19 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '../lib/utils'
 import { WorktreeCard } from './WorktreeCard'
+import { StackGroup } from './StackGroup'
 import { LaunchButtons } from './LaunchButtons'
 import { AddWorktreeModal } from './AddWorktreeModal'
 import { useWorktrees } from '../hooks/useWorktrees'
 import { useWorktreeStatus } from '../hooks/useWorktreeStatus'
 import { useWorktreePRs } from '../hooks/useWorktreePRs'
+import { useStacks } from '../hooks/useStacks'
 import { useCollapsed } from '../hooks/useCollapsed'
 import { useHomedir } from '../hooks/useHomedir'
 import { useFetchRepo } from '../hooks/useFetchRepo'
 import { makeRepoDropId } from '../hooks/useIssueDrag'
+import { buildStackPlacements, buildWorktreeRows } from '../lib/stack-grouping'
+import type { StackEntry } from '../lib/stack-grouping'
 import { rpc } from '../rpc'
 import type { IdeId, IssueTracker, RepoConfig, TerminalId, Worktree } from '../shared/types'
 
@@ -90,20 +94,39 @@ function RepoSection({
   // Fetch PR data for all feature worktrees (used for sorting + passed to cards)
   const { prMap, loading: prsLoading } = useWorktreePRs(repo.path, featureWorktrees, pollIntervalSec, refreshKey)
 
+  // `gh stack` membership, used to group and order stacked worktrees together
+  const { stacks } = useStacks(repo.path, pollIntervalSec, refreshKey)
+
   // Auto-sort: Merged → Approved Open PRs → Open PRs → Closed PRs → Draft PRs → No PR → Paused
-  const orderedWorktrees = useMemo(() => {
-    function sortPriority(wt: Worktree): number {
-      if (notReadyWorktrees.includes(wt.path)) return 6 // paused
-      const pr = prMap.get(wt.path)
-      if (pr && pr.state === 'MERGED') return 0 // merged PR
-      if (pr && pr.state === 'OPEN' && !pr.isDraft && pr.reviewDecision === 'APPROVED') return 1 // approved open PR
-      if (pr && pr.state === 'OPEN' && !pr.isDraft) return 2 // open PR
-      if (pr && pr.state === 'CLOSED') return 3 // closed PR
-      if (pr && pr.state === 'OPEN' && pr.isDraft) return 4 // draft PR
-      return 5 // no PR
-    }
-    return [...featureWorktrees].sort((a, b) => sortPriority(a) - sortPriority(b))
-  }, [featureWorktrees, prMap, notReadyWorktrees])
+  const sortPriority = useCallback((wt: Worktree): number => {
+    if (notReadyWorktrees.includes(wt.path)) return 6 // paused
+    const pr = prMap.get(wt.path)
+    if (pr && pr.state === 'MERGED') return 0 // merged PR
+    if (pr && pr.state === 'OPEN' && !pr.isDraft && pr.reviewDecision === 'APPROVED') return 1 // approved open PR
+    if (pr && pr.state === 'OPEN' && !pr.isDraft) return 2 // open PR
+    if (pr && pr.state === 'CLOSED') return 3 // closed PR
+    if (pr && pr.state === 'OPEN' && pr.isDraft) return 4 // draft PR
+    return 5 // no PR
+  }, [prMap, notReadyWorktrees])
+
+  // Stacked worktrees collapse into one row per stack, ordered bottom → top
+  const rows = useMemo(
+    () => buildWorktreeRows(featureWorktrees, stacks, sortPriority),
+    [featureWorktrees, stacks, sortPriority]
+  )
+
+  const stackPlacements = useMemo(
+    () => buildStackPlacements(featureWorktrees, stacks),
+    [featureWorktrees, stacks]
+  )
+
+  const visibleWorktreeCount = useMemo(
+    () => rows.reduce(
+      (total, row) => total + (row.kind === 'single' ? 1 : row.entries.filter((e) => e.worktree).length),
+      0
+    ),
+    [rows]
+  )
 
   useEffect(() => {
     if (issueDropBranch) setAddOpened(true)
@@ -122,6 +145,28 @@ function RepoSection({
   }
 
   if (!loading && worktrees.length === 0) return null
+
+  const renderWorktreeCard = (wt: Worktree) => (
+    <WorktreeCard
+      key={wt.path}
+      worktree={wt}
+      repoPath={repo.path}
+      pollIntervalSec={pollIntervalSec}
+      refreshKey={refreshKey}
+      defaultIde={defaultIde}
+      defaultTerminal={defaultTerminal}
+      issueTracker={issueTracker}
+      pr={prMap.get(wt.path) ?? null}
+      prLoading={prsLoading}
+      stackPlacement={stackPlacements.get(wt.path) ?? null}
+      deleting={deletingPaths.has(wt.path)}
+      settingUp={settingUpPaths.has(wt.path)}
+      notReady={notReadyWorktrees.includes(wt.path)}
+      suppressHover={isDraggingIssue}
+      onToggleNotReady={() => onToggleNotReady(wt.path)}
+      onConfirmDelete={(force) => startDelete(wt.path, force)}
+    />
+  )
 
   return (
     <div
@@ -149,14 +194,14 @@ function RepoSection({
           >
             <IconGripVertical size={14} />
           </button>
-          {orderedWorktrees.length > 0 ? (
+          {visibleWorktreeCount > 0 ? (
             <button className="p-0.5 rounded-md text-[#484f58] hover:text-muted-foreground transition-colors" onClick={onToggleCollapse}>
               {isCollapsed ? <IconChevronRight size={14} /> : <IconChevronDown size={14} />}
             </button>
           ) : (
             <span className="p-0.5 inline-flex w-[18px]" />
           )}
-          <span className={cn("text-base font-semibold font-mono text-foreground", orderedWorktrees.length > 0 && "cursor-pointer")} onClick={orderedWorktrees.length > 0 ? onToggleCollapse : undefined}>
+          <span className={cn("text-base font-semibold font-mono text-foreground", visibleWorktreeCount > 0 && "cursor-pointer")} onClick={visibleWorktreeCount > 0 ? onToggleCollapse : undefined}>
             {repo.name}
           </span>
           <span className="text-xs text-[#484f58] truncate">{shortenPath(repo.path)}</span>
@@ -244,25 +289,17 @@ function RepoSection({
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {orderedWorktrees.map((wt) => (
-                <WorktreeCard
-                  key={wt.path}
-                  worktree={wt}
-                  repoPath={repo.path}
-                  pollIntervalSec={pollIntervalSec}
-                  refreshKey={refreshKey}
-                  defaultIde={defaultIde}
-                  defaultTerminal={defaultTerminal}
-                  issueTracker={issueTracker}
-                  pr={prMap.get(wt.path) ?? null}
-                  prLoading={prsLoading}
-                  deleting={deletingPaths.has(wt.path)}
-                  settingUp={settingUpPaths.has(wt.path)}
-                  notReady={notReadyWorktrees.includes(wt.path)}
-                  suppressHover={isDraggingIssue}
-                  onToggleNotReady={() => onToggleNotReady(wt.path)}
-                  onConfirmDelete={(force) => startDelete(wt.path, force)}
-                />
+              {rows.map((row) => (
+                row.kind === 'single'
+                  ? renderWorktreeCard(row.worktree)
+                  : (
+                    <StackGroup
+                      key={row.key}
+                      stack={row.stack}
+                      entries={row.entries}
+                      renderCard={(entry: StackEntry) => renderWorktreeCard(entry.worktree as Worktree)}
+                    />
+                  )
               ))}
             </div>
           )}

@@ -6,6 +6,7 @@ import { PRBadge } from './PRBadge'
 import { ReviewBadge } from './ReviewBadge'
 import { ConflictsBadge } from './ConflictsBadge'
 import { DirtyBadge } from './DirtyBadge'
+import { StackBadge } from './StackBadge'
 import { LaunchButtons } from './LaunchButtons'
 import { DeleteWorktreeModal } from './DeleteWorktreeModal'
 import { DiffPanel } from './DiffPanel'
@@ -14,6 +15,7 @@ import { useWorktreeStatus } from '../hooks/useWorktreeStatus'
 import { useMergeConflicts } from '../hooks/useMergeConflicts'
 import { useHomedir } from '../hooks/useHomedir'
 import { rpc } from '../rpc'
+import type { StackPlacement } from '../lib/stack-grouping'
 import type { IdeId, IssueTracker, PRInfo, TerminalId, Worktree } from '../shared/types'
 
 interface WorktreeCardProps {
@@ -26,6 +28,8 @@ interface WorktreeCardProps {
   issueTracker: IssueTracker
   pr: PRInfo | null
   prLoading: boolean
+  /** Set when this worktree is a layer of a `gh stack`. */
+  stackPlacement?: StackPlacement | null
   deleting?: boolean
   settingUp?: boolean
   notReady?: boolean
@@ -65,7 +69,7 @@ function extractIssueKeyFromPRBody(body: string | null | undefined, tracker: Iss
 
 export function WorktreeCard({
   worktree, repoPath, pollIntervalSec, refreshKey, defaultIde, defaultTerminal, issueTracker,
-  pr, prLoading, deleting, settingUp, notReady, suppressHover, onToggleNotReady, onConfirmDelete
+  pr, prLoading, stackPlacement, deleting, settingUp, notReady, suppressHover, onToggleNotReady, onConfirmDelete
 }: WorktreeCardProps) {
   const [deleteOpened, setDeleteOpened] = useState(false)
   const [hovered, setHovered] = useState(false)
@@ -111,6 +115,9 @@ export function WorktreeCard({
           {worktree.branch}
         </span>
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
+          {stackPlacement && (
+            <StackBadge stack={stackPlacement.stack} position={stackPlacement.position} total={stackPlacement.total} />
+          )}
           <PRBadge pr={pr} loading={prLoading} />
           <IssueBadge issueKey={issueKey} issue={issue} loading={issueLoading} issueTracker={issueTracker} />
           <LaunchButtons worktreePath={worktree.path} defaultIde={defaultIde} defaultTerminal={defaultTerminal} />
@@ -195,6 +202,9 @@ export function WorktreeCard({
                   </span>
                 )}
                 <DirtyBadge status={wtStatus} loading={wtStatusLoading} worktreePath={worktree.path} onPullComplete={refreshStatus} />
+                {stackPlacement && (
+                  <StackBadge stack={stackPlacement.stack} position={stackPlacement.position} total={stackPlacement.total} />
+                )}
                 <ReviewBadge pr={pr} />
                 <PRBadge pr={pr} loading={prLoading} />
                 <ConflictsBadge conflicts={conflicts} loading={conflictsLoading} />

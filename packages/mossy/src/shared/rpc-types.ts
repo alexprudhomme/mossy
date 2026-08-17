@@ -14,6 +14,7 @@ import type {
   PRInfo,
   RateLimitStatus,
   SetupCommandResult,
+  StackInfo,
   TerminalId,
   Worktree,
   WorktreeStatus
@@ -153,6 +154,12 @@ export type MossyRPC = {
       'gh:rateLimit': {
         params: Record<string, never>
         response: RateLimitStatus
+      }
+
+      // gh stack (stacked pull requests)
+      'gh:stacks': {
+        params: { repoPath: string; refresh?: boolean }
+        response: StackInfo[]
       }
 
       // Launcher

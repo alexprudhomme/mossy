@@ -206,6 +206,21 @@ const stubRpc = new Proxy({}, {
         case 'git:mergeConflicts': return { hasConflicts: false, conflictCount: 0, conflictFiles: [], targetBranch: 'main' }
         case 'gh:pr': return { number: 42, url: 'https://github.com/example/mossy/pull/42', title: 'feat: example PR', state: 'OPEN', isDraft: false, reviewDecision: 'APPROVED', ciStatus: 'SUCCESS', ciFailed: 0, ciTotal: 3 }
         case 'gh:rateLimit': return { limited: false, resetsAt: null }
+        case 'gh:stacks': {
+          const repoName = repoPath.split('/').pop() ?? 'repo'
+          return [
+            {
+              id: 'STACK_kwDOdev',
+              number: 7,
+              trunkBranch: 'main',
+              branches: [
+                { branch: `feature/${repoName}-1`, head: 'aaa1', base: 'trunk0', prNumber: 101, prUrl: 'https://github.com/example/mossy/pull/101' },
+                { branch: `feature/${repoName}-3`, head: 'aaa2', base: 'aaa1', prNumber: 102, prUrl: 'https://github.com/example/mossy/pull/102' },
+                { branch: `feature/${repoName}-not-local`, head: 'aaa3', base: 'aaa2', prNumber: 103, prUrl: 'https://github.com/example/mossy/pull/103' },
+              ],
+            },
+          ]
+        }
         case 'issues:mine': return MOCK_ISSUES
         case 'system:homedir': return '/Users/dev'
         case 'dialog:openDirectory': return prompt('Enter folder path:') || null
