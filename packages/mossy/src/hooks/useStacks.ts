@@ -4,6 +4,7 @@ import type { StackInfo } from '../shared/types'
 
 export function useStacks(
   repoPath: string | null,
+  branches: string[],
   pollIntervalSec: number,
   refreshKey?: number
 ) {
@@ -12,8 +13,11 @@ export function useStacks(
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const fetchingRef = useRef(false)
 
+  // Stable dependency: the array identity changes every render
+  const branchKey = [...branches].sort().join(',')
+
   const fetchStacks = useCallback(async () => {
-    if (!repoPath) {
+    if (!repoPath || branches.length === 0) {
       setStacks([])
       return
     }
@@ -22,7 +26,7 @@ export function useStacks(
     fetchingRef.current = true
     setLoading(true)
     try {
-      const result = await rpc().request['gh:stacks']({ repoPath })
+      const result = await rpc().request['gh:stacks']({ repoPath, branches })
       setStacks(Array.isArray(result) ? result : [])
     } catch {
       setStacks([])
@@ -30,7 +34,7 @@ export function useStacks(
       setLoading(false)
       fetchingRef.current = false
     }
-  }, [repoPath])
+  }, [repoPath, branchKey])
 
   useEffect(() => {
     fetchStacks()
@@ -43,7 +47,7 @@ export function useStacks(
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [repoPath, pollIntervalSec, refreshKey])
+  }, [repoPath, branchKey, pollIntervalSec, refreshKey])
 
   return { stacks, loading, refresh: fetchStacks }
 }

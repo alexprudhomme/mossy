@@ -158,7 +158,7 @@ export type MossyRPC = {
 
       // gh stack (stacked pull requests)
       'gh:stacks': {
-        params: { repoPath: string; refresh?: boolean }
+        params: { repoPath: string; branches: string[]; refresh?: boolean }
         response: StackInfo[]
       }
 

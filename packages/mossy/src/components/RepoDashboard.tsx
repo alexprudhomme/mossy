@@ -95,7 +95,8 @@ function RepoSection({
   const { prMap, loading: prsLoading } = useWorktreePRs(repo.path, featureWorktrees, pollIntervalSec, refreshKey)
 
   // `gh stack` membership, used to group and order stacked worktrees together
-  const { stacks } = useStacks(repo.path, pollIntervalSec, refreshKey)
+  const featureBranches = useMemo(() => featureWorktrees.map((wt) => wt.branch), [featureWorktrees])
+  const { stacks } = useStacks(repo.path, featureBranches, pollIntervalSec, refreshKey)
 
   // Auto-sort: Merged → Approved Open PRs → Open PRs → Closed PRs → Draft PRs → No PR → Paused
   const sortPriority = useCallback((wt: Worktree): number => {

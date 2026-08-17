@@ -281,8 +281,8 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
       'gh:rateLimit': () => {
         return getRateLimitStatus()
       },
-      'gh:stacks': async ({ repoPath, refresh }) => {
-        return getStacks(repoPath, refresh ?? false)
+      'gh:stacks': async ({ repoPath, branches, refresh }) => {
+        return getStacks(repoPath, branches ?? [], refresh ?? false)
       },
 
       // Launcher

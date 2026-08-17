@@ -1,21 +1,29 @@
 import path from 'node:path'
 import fs from 'node:fs'
 import { getShellEnv } from './shell-env'
+import { getGitHubRepo } from './git'
+import { getStacksForBranches } from './github'
 import type { StackBranchInfo, StackInfo } from '../../shared/types'
 
 /**
- * Reads `gh stack` state directly from the git directory rather than shelling
- * out to `gh stack view --json`, which only works when the *current* branch is
- * part of a stack and so cannot enumerate a repository's stacks.
+ * Stack detection for `gh stack`.
  *
- * Each worktree that has run a `gh stack` command keeps its own copy of the
- * state at `<git-dir>/gh-stack`, and those copies drift: a copy written before
- * `gh stack submit` has no stack id/number and no per-branch `head`. We
- * therefore read every copy and merge them.
+ * Primary source is GitHub's stacked-PR API (see `getStacksForBranches`), which
+ * is authoritative and independent of local state. This module adds caching and
+ * a local fallback that reads the gh-stack state files from the git directory.
+ *
+ * The fallback exists because the API is in public preview and because the
+ * files are the only thing that works offline. Reading the files is not
+ * straightforward: `gh stack view --json` only works when the current branch is
+ * part of a stack, so it cannot enumerate a repository's stacks, and each
+ * worktree that ran a `gh stack` command keeps its own copy of the state at
+ * `<git-dir>/gh-stack`. Those copies drift — a copy written before
+ * `gh stack submit` has no stack id/number and no per-branch head — so every
+ * copy is read and merged.
  */
 
 const STACK_FILE = 'gh-stack'
-const CACHE_TTL_MS = 30_000
+const CACHE_TTL_MS = 60_000
 
 interface CacheEntry {
   stacks: StackInfo[]
@@ -197,21 +205,51 @@ export function mergeStacks(records: TimestampedStack[]): StackInfo[] {
 }
 
 /**
- * All `gh stack` stacks known locally for a repo, ordered bottom → top within
- * each stack. Returns an empty array when the repo has no stacks or `gh stack`
- * has never run there.
+ * All stacks relevant to the given branches, ordered bottom → top.
+ *
+ * GitHub's stacked-PR API is the source of truth: it is authoritative, needs no
+ * local `gh stack` state, and so sees stacks created by anyone on any machine.
+ * The local gh-stack files are only a fallback, for when the API is
+ * unreachable (offline, unauthenticated) or the preview API changes shape.
  */
-export async function getStacks(repoPath: string, forceRefresh = false): Promise<StackInfo[]> {
-  const cached = stackCache.get(repoPath)
+export async function getStacks(
+  repoPath: string,
+  branches: string[],
+  forceRefresh = false
+): Promise<StackInfo[]> {
+  const cacheKey = `${repoPath}\u0000${[...branches].sort().join(',')}`
+  const cached = stackCache.get(cacheKey)
   if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
     return cached.stacks
   }
 
-  const gitCommonDir = await getGitCommonDir(repoPath)
-  if (!gitCommonDir) {
-    stackCache.set(repoPath, { stacks: [], timestamp: Date.now() })
-    return []
+  const stacks = await resolveStacks(repoPath, branches)
+  stackCache.set(cacheKey, { stacks, timestamp: Date.now() })
+  return stacks
+}
+
+async function resolveStacks(repoPath: string, branches: string[]): Promise<StackInfo[]> {
+  const ghRepo = await getGitHubRepo(repoPath)
+
+  if (ghRepo && branches.length > 0) {
+    const remote = await getStacksForBranches(repoPath, ghRepo, branches)
+    // null means the lookup failed outright; an empty array is a real answer
+    // ("not stacked") and must not trigger the fallback.
+    if (remote !== null) return remote
   }
+
+  return readLocalStacks(repoPath)
+}
+
+/**
+ * Fallback: reconstruct stacks from the `gh stack` state files in the git dir.
+ *
+ * Each worktree that ran a `gh stack` command keeps its own copy, and those
+ * copies drift, so every copy is read and merged.
+ */
+export async function readLocalStacks(repoPath: string): Promise<StackInfo[]> {
+  const gitCommonDir = await getGitCommonDir(repoPath)
+  if (!gitCommonDir) return []
 
   const records: TimestampedStack[] = []
   for (const file of findStackFiles(gitCommonDir)) {
@@ -226,9 +264,7 @@ export async function getStacks(repoPath: string, forceRefresh = false): Promise
     }
   }
 
-  const stacks = mergeStacks(records)
-  stackCache.set(repoPath, { stacks, timestamp: Date.now() })
-  return stacks
+  return mergeStacks(records)
 }
 
 /** Test seam. */

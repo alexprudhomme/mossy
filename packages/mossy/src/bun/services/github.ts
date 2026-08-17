@@ -1,5 +1,5 @@
 import { getShellEnv } from './shell-env'
-import type { PRInfo, RateLimitStatus } from '../../shared/types'
+import type { PRInfo, RateLimitStatus, StackInfo } from '../../shared/types'
 
 let rateLimitStatus: RateLimitStatus = { limited: false, resetsAt: null }
 
@@ -126,6 +126,155 @@ export async function getPRForBranch(
 }
 
 const VALID_REVIEW_DECISIONS = new Set(['APPROVED', 'CHANGES_REQUESTED', 'REVIEW_REQUIRED'])
+
+// --- Stacked pull requests (gh stack) ---
+
+/**
+ * How many branches to look up per GraphQL request. The point cost is 1
+ * regardless, so this only bounds the size of the query document.
+ */
+const STACK_BRANCH_CHUNK = 25
+
+/** Max layers read per stack. Stacks are small in practice. */
+const STACK_ENTRY_LIMIT = 50
+
+interface RawStackEntryNode {
+  position?: number
+  pullRequest?: { number?: number; url?: string; headRefName?: string }
+}
+
+interface RawRemoteStack {
+  id?: string
+  number?: number
+  size?: number
+  baseRefName?: string
+  entries?: { nodes?: RawStackEntryNode[] }
+}
+
+/**
+ * Turn one GraphQL response into stacks, deduplicated by stack identity.
+ * Exported for tests.
+ */
+export function parseStackQueryResponse(json: string): StackInfo[] {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(json)
+  } catch {
+    return []
+  }
+
+  const repository = (parsed as { data?: { repository?: Record<string, unknown> } })?.data?.repository
+  if (!repository) return []
+
+  const byIdentity = new Map<string, StackInfo>()
+
+  for (const value of Object.values(repository)) {
+    const nodes = (value as { nodes?: Array<{ stack?: RawRemoteStack | null }> })?.nodes
+    if (!Array.isArray(nodes)) continue
+
+    for (const node of nodes) {
+      const raw = node?.stack
+      if (!raw) continue // null means this PR is not in a stack
+
+      const trunkBranch = raw.baseRefName
+      if (!trunkBranch) continue
+
+      const entries = raw.entries?.nodes
+      if (!Array.isArray(entries) || entries.length === 0) continue
+
+      // GraphQL does not guarantee ordering; `position` is authoritative.
+      const branches = entries
+        .filter((entry) => typeof entry?.position === 'number' && entry.pullRequest?.headRefName)
+        .sort((a, b) => (a.position as number) - (b.position as number))
+        .map((entry) => ({
+          branch: entry.pullRequest?.headRefName as string,
+          // The API models stacks by PR, not by commit, so there is no
+          // head/base to report. Only the local files carry those.
+          head: null,
+          base: null,
+          prNumber: typeof entry.pullRequest?.number === 'number' ? entry.pullRequest.number : null,
+          prUrl: typeof entry.pullRequest?.url === 'string' ? entry.pullRequest.url : null
+        }))
+
+      if (branches.length === 0) continue
+
+      const identity = raw.id ?? (raw.number !== undefined ? `#${raw.number}` : branches.map((b) => b.branch).join('>'))
+      if (byIdentity.has(identity)) continue
+
+      byIdentity.set(identity, {
+        id: typeof raw.id === 'string' ? raw.id : null,
+        number: typeof raw.number === 'number' ? raw.number : null,
+        trunkBranch,
+        branches
+      })
+    }
+  }
+
+  return [...byIdentity.values()]
+}
+
+function buildStackQuery(branchCount: number): string {
+  const vars = Array.from({ length: branchCount }, (_, i) => `$b${i}:String!`).join(',')
+  const selections = Array.from({ length: branchCount }, (_, i) =>
+    `s${i}:pullRequests(headRefName:$b${i},first:1,states:OPEN){nodes{stack{id number size baseRefName entries(first:${STACK_ENTRY_LIMIT}){nodes{position pullRequest{number url headRefName}}}}}}`
+  ).join(' ')
+  return `query($owner:String!,$name:String!,${vars}){repository(owner:$owner,name:$name){${selections}}}`
+}
+
+/**
+ * Look up the stack each branch belongs to, using GitHub's stacked-PR API.
+ *
+ * This is authoritative and needs no local `gh stack` state, so it sees stacks
+ * created by anyone on any machine. Returns null when the lookup could not be
+ * performed at all (offline, unauthenticated, or the preview API changed), so
+ * the caller can fall back to reading local state. An empty array means the
+ * lookup succeeded and these branches are genuinely not stacked.
+ */
+export async function getStacksForBranches(
+  repoPath: string,
+  ghRepo: string,
+  branches: string[]
+): Promise<StackInfo[] | null> {
+  const unique = [...new Set(branches.filter((b) => b && b !== '(detached)'))]
+  if (unique.length === 0) return []
+
+  const [owner, name] = ghRepo.split('/')
+  if (!owner || !name) return null
+
+  const stacks: StackInfo[] = []
+  let anyChunkSucceeded = false
+
+  for (let i = 0; i < unique.length; i += STACK_BRANCH_CHUNK) {
+    const chunk = unique.slice(i, i + STACK_BRANCH_CHUNK)
+    const args = [
+      'api', 'graphql',
+      '-f', `query=${buildStackQuery(chunk.length)}`,
+      // -f keeps values as literal strings; -F would coerce a branch
+      // named "123" or "true" into a number or boolean.
+      '-f', `owner=${owner}`,
+      '-f', `name=${name}`,
+      ...chunk.flatMap((branch, idx) => ['-f', `b${idx}=${branch}`])
+    ]
+
+    try {
+      const stdout = await gh(args, repoPath)
+      anyChunkSucceeded = true
+      stacks.push(...parseStackQueryResponse(stdout))
+    } catch {
+      // Leave anyChunkSucceeded alone; a total failure returns null below.
+    }
+  }
+
+  if (!anyChunkSucceeded) return null
+
+  // Deduplicate across chunks
+  const seen = new Map<string, StackInfo>()
+  for (const stack of stacks) {
+    const key = stack.id ?? (stack.number !== null ? `#${stack.number}` : stack.branches.map((b) => b.branch).join('>'))
+    if (!seen.has(key)) seen.set(key, stack)
+  }
+  return [...seen.values()]
+}
 
 function mapReviewDecision(
   reviewDecision: string | null | undefined,
