@@ -1,4 +1,4 @@
-import { IconStack2, IconGitBranch } from '@tabler/icons-react'
+import { IconStack2, IconGitBranch, IconPlus } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import type { StackEntry } from '../lib/stack-grouping'
 import type { StackInfo } from '../shared/types'
@@ -8,6 +8,10 @@ interface StackGroupProps {
   entries: StackEntry[]
   /** Renders the card for a layer that has a local worktree. */
   renderCard: (entry: StackEntry) => ReactNode
+  /** Creates a worktree for a stack layer that has none yet. */
+  onCreateWorktree: (branch: string) => void
+  /** Branches with a worktree creation in flight. */
+  creatingBranches: Set<string>
 }
 
 /**
@@ -15,7 +19,7 @@ interface StackGroupProps {
  * ordered bottom → top, so the layer closest to the trunk (and first to merge)
  * appears first.
  */
-export function StackGroup({ stack, entries, renderCard }: StackGroupProps) {
+export function StackGroup({ stack, entries, renderCard, onCreateWorktree, creatingBranches }: StackGroupProps) {
   const prCount = stack.branches.filter((branch) => branch.prNumber !== null).length
   const missingCount = entries.filter((entry) => entry.worktree === null).length
 
@@ -64,8 +68,7 @@ export function StackGroup({ stack, entries, renderCard }: StackGroupProps) {
                 ? renderCard(entry)
                 : (
                   <div
-                    className="flex items-center gap-2 rounded-md border border-dashed border-border/50 px-3 py-1.5 opacity-50"
-                    title="This layer of the stack has no local worktree"
+                    className="flex items-center gap-2 rounded-md border border-dashed border-border/50 px-3 py-1.5 opacity-60 transition-opacity hover:opacity-100"
                   >
                     <IconGitBranch size={14} className="text-[#484f58] shrink-0" />
                     <span className="text-xs font-mono text-muted-foreground truncate">
@@ -76,9 +79,24 @@ export function StackGroup({ stack, entries, renderCard }: StackGroupProps) {
                         #{entry.branch.prNumber}
                       </span>
                     )}
-                    <span className="text-[10px] text-[#484f58] ml-auto shrink-0">
-                      no worktree
-                    </span>
+                    <div className="ml-auto shrink-0">
+                      {creatingBranches.has(entry.branch.branch) ? (
+                        <span className="inline-flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <span className="animate-spin h-3 w-3 border border-primary border-t-transparent rounded-full inline-block" />
+                          Creating…
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => onCreateWorktree(entry.branch.branch)}
+                          title={`Create a worktree for ${entry.branch.branch}`}
+                          aria-label={`Create a worktree for ${entry.branch.branch}`}
+                          className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-primary hover:bg-primary/10 transition-colors"
+                        >
+                          <IconPlus size={12} />
+                          Create worktree
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
             </div>

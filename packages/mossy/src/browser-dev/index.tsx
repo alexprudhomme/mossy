@@ -180,6 +180,11 @@ const stubRpc = new Proxy({}, {
         case 'config:setCollapsed': return
         case 'git:worktrees': return worktreesForRepo(repoPath)
         case 'git:defaultBranch': return 'main'
+        case 'git:addWorktree': {
+          const branch = (payload?.branch ?? 'new-branch') as string
+          return { success: true, worktreePath: `/Users/dev/worktrees/demo/${branch.replace(/\//g, '-')}` }
+        }
+        case 'git:runSetup': return { results: [], allSucceeded: true }
         case 'git:remoteBranches': return []
         case 'git:status': return {
           staged: [...mockGitState.staged],

@@ -220,6 +220,36 @@ export async function removeWorktree(
   }
 }
 
+/**
+ * Make sure `branch` can be resolved locally before adding a worktree for it.
+ *
+ * `git worktree add <path> <branch>` only falls back to a remote branch when a
+ * matching `refs/remotes/origin/<branch>` already exists locally. For a branch
+ * created after the last fetch — a stack layer pushed by a teammate, say — no
+ * such ref exists and the command fails with "invalid reference", so fetch just
+ * that branch first.
+ */
+async function ensureBranchAvailable(repoPath: string, branch: string): Promise<void> {
+  const localExists = await gitSilent(
+    ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`],
+    repoPath
+  )
+  if (localExists !== null) return
+
+  const trackingExists = await gitSilent(
+    ['rev-parse', '--verify', '--quiet', `refs/remotes/origin/${branch}`],
+    repoPath
+  )
+  if (trackingExists !== null) return
+
+  // Fetch only this branch. Failures are left to the caller: the worktree add
+  // that follows will surface git's own error message.
+  await gitSilent(
+    ['fetch', 'origin', `+refs/heads/${branch}:refs/remotes/origin/${branch}`],
+    repoPath
+  )
+}
+
 export async function addWorktree(
   repoPath: string,
   branch: string,
@@ -233,6 +263,8 @@ export async function addWorktree(
     if (isNewBranch) {
       args.push('-b', branch, worktreePath, baseBranch || 'main')
     } else {
+      // The branch already exists somewhere; make sure this clone can see it.
+      await ensureBranchAvailable(repoPath, branch)
       args.push(worktreePath, branch)
     }
 
