@@ -59,6 +59,27 @@ export interface PRInfo {
   ciTotal: number
 }
 
+/** One layer of a `gh stack`, as recorded in the gh-stack state file. */
+export interface StackBranchInfo {
+  branch: string
+  /** Commit at the tip of this layer. Absent until the stack is submitted. */
+  head: string | null
+  /** Commit this layer is based on — the `head` of the layer below. */
+  base: string | null
+  prNumber: number | null
+  prUrl: string | null
+}
+
+export interface StackInfo {
+  /** GitHub node id. Absent until `gh stack submit` has run. */
+  id: string | null
+  /** Repository-scoped stack number shown in the GitHub UI. Absent until submitted. */
+  number: number | null
+  trunkBranch: string
+  /** Ordered bottom (closest to trunk) → top (furthest from trunk). */
+  branches: StackBranchInfo[]
+}
+
 export interface WorktreeStatus {
   hasUncommittedChanges: boolean
   statusCheckFailed: boolean

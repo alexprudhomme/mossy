@@ -25,6 +25,7 @@ import {
   getMergeConflicts
 } from './services/git'
 import { getPRForBranch, getRateLimitStatus } from './services/github'
+import { getStacks } from './services/stack'
 import { getCurrentIssue, getMyIssues } from './services/issue-dispatcher'
 import {
   getJiraEpics,
@@ -279,6 +280,9 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
       },
       'gh:rateLimit': () => {
         return getRateLimitStatus()
+      },
+      'gh:stacks': async ({ repoPath, branches, refresh }) => {
+        return getStacks(repoPath, branches ?? [], refresh ?? false)
       },
 
       // Launcher
