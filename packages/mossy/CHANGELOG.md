@@ -1,5 +1,12 @@
 # mossy
 
+## 0.12.0
+
+### Minor Changes
+
+- dc6d896: Group worktrees that belong to a `gh stack` into a single ordered block on the dashboard. Stacked worktrees are shown bottom-to-top (closest to trunk first) inside a labelled container with the layer count, PR count and trunk branch, and each card gets a layer badge listing the full stack. Stack layers with no local worktree appear as placeholder rows so the ordering stays complete. Stacks are detected through GitHub's stacked-PR API in one batched request per repository, so stacks created by anyone on any machine are picked up; the local gh-stack files are used as an offline fallback.
+- 7a5b195: Add a "Create worktree" button to stack layers that have no local worktree. Stacks are detected from GitHub, so a stack can include layers you have never checked out; the button creates a worktree for that branch in place, running the repo's setup commands afterwards like any other worktree creation.
+
 ## 0.11.2
 
 ### Patch Changes
