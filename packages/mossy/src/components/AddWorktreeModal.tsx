@@ -126,6 +126,9 @@ export function AddWorktreeModal({ repo, opened, onClose, onCreated, initialBran
                 onChange={(e) => setBranchFilter(e.target.value)}
                 disabled={loadingBranches}
                 autoFocus
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono mb-1"
               />
               {loadingBranches ? (
