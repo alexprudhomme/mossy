@@ -1,5 +1,16 @@
 # mossy
 
+## 0.13.0
+
+### Minor Changes
+
+- 6f596be: Allow new worktrees to be created from a selected base branch instead of always using the repository default branch.
+
+### Patch Changes
+
+- f0ba04e: Disable autocorrection in the Existing branch search field.
+- 2bac19e: Point the auto-updater and repository metadata at `coveooss/mossy` following the repository transfer.
+
 ## 0.12.0
 
 ### Minor Changes
