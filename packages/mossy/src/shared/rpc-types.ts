@@ -54,12 +54,17 @@ export type MossyRPC = {
         params: { repoPath: string }
         response: string[]
       }
+      'git:baseBranches': {
+        params: { repoPath: string }
+        response: string[]
+      }
       'git:addWorktree': {
         params: {
           repoPath: string
           repoName: string
           branch: string
           isNewBranch: boolean
+          baseBranch?: string
         }
         response: { success: boolean; worktreePath?: string; error?: string }
       }

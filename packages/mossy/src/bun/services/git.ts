@@ -130,6 +130,38 @@ export async function getRemoteBranches(repoPath: string): Promise<string[]> {
     .sort()
 }
 
+/** Return local and remote branches that can be used as a new branch's base. */
+export async function getBaseBranches(repoPath: string): Promise<string[]> {
+  await gitSilent(['fetch', '--prune', 'origin'], repoPath)
+
+  const [localOutput, remoteOutput] = await Promise.all([
+    git(['for-each-ref', '--format=%(refname:short)', 'refs/heads'], repoPath),
+    git(['for-each-ref', '--format=%(refname)', 'refs/remotes/origin'], repoPath)
+  ])
+
+  const branches = new Set<string>()
+  for (const branch of localOutput.trim().split('\n')) {
+    if (branch) branches.add(branch)
+  }
+  for (const ref of remoteOutput.trim().split('\n')) {
+    if (ref && ref !== 'refs/remotes/origin/HEAD') {
+      branches.add(ref.replace(/^refs\/remotes\/origin\//, ''))
+    }
+  }
+
+  return [...branches].sort()
+}
+
+async function resolveBaseBranch(repoPath: string, baseBranch: string): Promise<string> {
+  const localRef = await gitSilent(['rev-parse', '--verify', `refs/heads/${baseBranch}`], repoPath)
+  if (localRef) return baseBranch
+
+  const remoteRef = await gitSilent(['rev-parse', '--verify', `refs/remotes/origin/${baseBranch}`], repoPath)
+  if (remoteRef) return `origin/${baseBranch}`
+
+  return baseBranch
+}
+
 export function buildWorktreePath(repoName: string, branch: string): string {
   const config = getConfig()
   const basePath = config.worktreeBasePath
@@ -261,7 +293,9 @@ export async function addWorktree(
     const args = ['worktree', 'add']
 
     if (isNewBranch) {
-      args.push('-b', branch, worktreePath, baseBranch || 'main')
+      if (!baseBranch) throw new Error('A base branch is required')
+      const baseRef = await resolveBaseBranch(repoPath, baseBranch)
+      args.push('-b', branch, worktreePath, baseRef)
     } else {
       // The branch already exists somewhere; make sure this clone can see it.
       await ensureBranchAvailable(repoPath, branch)

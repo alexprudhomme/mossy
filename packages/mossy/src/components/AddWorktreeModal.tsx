@@ -15,7 +15,9 @@ interface AddWorktreeModalProps {
 export function AddWorktreeModal({ repo, opened, onClose, onCreated, initialBranch }: AddWorktreeModalProps) {
   const [branch, setBranch] = useState('')
   const [mode, setMode] = useState<'new' | 'existing'>('new')
-  const [defaultBranch, setDefaultBranch] = useState<string | null>(null)
+  const [baseBranch, setBaseBranch] = useState('')
+  const [baseBranches, setBaseBranches] = useState<string[]>([])
+  const [loadingBaseBranches, setLoadingBaseBranches] = useState(false)
   const [remoteBranches, setRemoteBranches] = useState<string[]>([])
   const [loadingBranches, setLoadingBranches] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -31,9 +33,21 @@ export function AddWorktreeModal({ repo, opened, onClose, onCreated, initialBran
       setError(null)
       setSubmitting(false)
       setBranchExists(false)
+      setBaseBranch('')
+      setBaseBranches([])
+      setLoadingBaseBranches(true)
       setRemoteBranches([])
       setBranchFilter('')
-      rpc().request['git:defaultBranch']({ repoPath: repo.path }).then(setDefaultBranch).catch(() => setDefaultBranch('main'))
+
+      Promise.all([
+        rpc().request['git:defaultBranch']({ repoPath: repo.path }).catch(() => 'main'),
+        rpc().request['git:baseBranches']({ repoPath: repo.path }).catch(() => [])
+      ]).then(([detectedDefaultBranch, branches]) => {
+        const availableBranches = Array.from(new Set([detectedDefaultBranch, ...branches]))
+        setBaseBranches(availableBranches)
+        setBaseBranch(detectedDefaultBranch)
+      }).finally(() => setLoadingBaseBranches(false))
+
       rpc().request['config:get']({}).then((cfg) => setWorktreeBasePath(cfg.worktreeBasePath || '~/Developer/worktrees'))
     }
   }, [opened, repo.path, initialBranch])
@@ -54,7 +68,7 @@ export function AddWorktreeModal({ repo, opened, onClose, onCreated, initialBran
 
   const slug = repo.name.toLowerCase().replace(/\s+/g, '-')
   const pathPreview = branch ? `${worktreeBasePath}/${slug}/${branch}` : null
-  const canSubmit = branch.trim().length > 0 && !submitting
+  const canSubmit = branch.trim().length > 0 && (mode === 'existing' || baseBranch.length > 0) && !submitting
 
   const filteredBranches = branchFilter
     ? remoteBranches.filter((b) => b.toLowerCase().includes(branchFilter.toLowerCase()))
@@ -69,7 +83,8 @@ export function AddWorktreeModal({ repo, opened, onClose, onCreated, initialBran
       repoPath: repo.path,
       repoName: repo.name,
       branch: branch.trim(),
-      isNewBranch
+      isNewBranch,
+      baseBranch: isNewBranch ? baseBranch : undefined
     })
     setSubmitting(false)
     if (result.success) {
@@ -101,21 +116,40 @@ export function AddWorktreeModal({ repo, opened, onClose, onCreated, initialBran
 
         <div className="flex flex-col gap-4">
           {mode === 'new' ? (
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Branch name</label>
-              <input
-                type="text"
-                placeholder="feat/my-feature"
-                value={branch}
-                onChange={(e) => { setBranch(e.target.value); setError(null); setBranchExists(false) }}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
-                autoFocus
-                autoCapitalize="off"
-                autoCorrect="off"
-                spellCheck={false}
-                className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Branch name</label>
+                <input
+                  type="text"
+                  placeholder="feat/my-feature"
+                  value={branch}
+                  onChange={(e) => { setBranch(e.target.value); setError(null); setBranchExists(false) }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
+                  autoFocus
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Base branch</label>
+                <select
+                  value={baseBranch}
+                  onChange={(e) => setBaseBranch(e.target.value)}
+                  disabled={loadingBaseBranches}
+                  className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono disabled:opacity-50"
+                >
+                  {loadingBaseBranches ? (
+                    <option>Loading branches...</option>
+                  ) : (
+                    baseBranches.map((candidate) => (
+                      <option key={candidate} value={candidate}>{candidate}</option>
+                    ))
+                  )}
+                </select>
+              </div>
+            </>
           ) : (
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">Branch</label>
@@ -155,10 +189,6 @@ export function AddWorktreeModal({ repo, opened, onClose, onCreated, initialBran
                 </div>
               )}
             </div>
-          )}
-
-          {mode === 'new' && defaultBranch && !branchExists && (
-            <p className="text-xs text-muted-foreground">Will branch off <code className="bg-secondary px-1 py-0.5 rounded text-foreground">{defaultBranch}</code></p>
           )}
 
           {pathPreview && (
