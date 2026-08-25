@@ -10,6 +10,7 @@ import {
   addWorktree,
   buildWorktreePath,
   getRemoteBranches,
+  getBaseBranches,
   getWorktreeStatus,
   removeWorktree,
   runSetupCommands,
@@ -194,8 +195,11 @@ const mainviewRPC = BrowserView.defineRPC<MossyRPC>({
       'git:remoteBranches': async ({ repoPath }) => {
         return getRemoteBranches(repoPath)
       },
-      'git:addWorktree': async ({ repoPath, repoName, branch, isNewBranch }) => {
-        const baseBranch = isNewBranch ? await getDefaultBranch(repoPath) : undefined
+      'git:baseBranches': async ({ repoPath }) => {
+        return getBaseBranches(repoPath)
+      },
+      'git:addWorktree': async ({ repoPath, repoName, branch, isNewBranch, baseBranch: requestedBaseBranch }) => {
+        const baseBranch = isNewBranch ? (requestedBaseBranch ?? await getDefaultBranch(repoPath)) : undefined
         const worktreePath = buildWorktreePath(repoName, branch)
         const result = await addWorktree(repoPath, branch, worktreePath, isNewBranch, baseBranch)
         if (!result.success) return result

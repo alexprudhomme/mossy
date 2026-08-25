@@ -181,6 +181,11 @@ const stubRpc = new Proxy({}, {
         case 'git:worktrees': return worktreesForRepo(repoPath)
         case 'git:defaultBranch': return 'main'
         case 'git:remoteBranches': return []
+        case 'git:baseBranches': return ['main', 'develop', 'release/next']
+        case 'git:addWorktree': {
+          const branch = (payload?.branch ?? 'feature/new-worktree') as string
+          return { success: true, worktreePath: `/Users/dev/worktrees/${branch}` }
+        }
         case 'git:status': return {
           staged: [...mockGitState.staged],
           unstaged: [...mockGitState.unstaged],
