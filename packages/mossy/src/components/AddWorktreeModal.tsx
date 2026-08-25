@@ -83,8 +83,8 @@ export function AddWorktreeModal({ repo, opened, onClose, onCreated, initialBran
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="bg-card rounded-lg border shadow-lg max-w-md w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+      <div className="bg-card rounded-lg border shadow-lg max-w-md w-full mx-4 p-6">
         <h3 className="text-lg font-semibold text-foreground mb-4">Add worktree to {repo.name}</h3>
 
         {/* Mode toggle */}
