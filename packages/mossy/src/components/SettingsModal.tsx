@@ -37,18 +37,20 @@ interface SettingsModalProps {
   opened: boolean
   onClose: () => void
   config: AppConfig | null
-  addRepo: (name: string, path: string) => Promise<void>
-  removeRepo: (id: string) => Promise<void>
-  setPollInterval: (sec: number) => Promise<void>
-  setFetchInterval: (sec: number) => Promise<void>
-  setAutoUpdateEnabled: (enabled: boolean) => Promise<void>
-  setUpdateCheckInterval: (minutes: number) => Promise<void>
-  setDefaultIde: (ide: IdeId) => Promise<void>
-  setDefaultTerminal: (terminal: TerminalId) => Promise<void>
-  setRepoSetupCommands: (repoId: string, commands: string[]) => Promise<void>
-  setIssueTracker: (tracker: IssueTracker) => Promise<void>
-  setWorktreeBasePath: (path: string) => Promise<void>
+  onApply: (config: AppConfig) => Promise<void>
   onDependencyStatusChange?: (status: DependencyStatus) => void
+}
+
+function cloneConfig(config: AppConfig): AppConfig {
+  return {
+    ...config,
+    repositories: config.repositories.map((repo) => ({
+      ...repo,
+      setupCommands: repo.setupCommands ? [...repo.setupCommands] : undefined,
+    })),
+    collapsedRepos: [...config.collapsedRepos],
+    notReadyWorktrees: [...config.notReadyWorktrees],
+  }
 }
 
 const NAV_ITEMS: { id: Section; label: string; icon: typeof IconSettings }[] = [
@@ -69,20 +71,13 @@ export function SettingsModal({
   opened,
   onClose,
   config,
-  addRepo,
-  removeRepo,
-  setPollInterval,
-  setFetchInterval,
-  setAutoUpdateEnabled,
-  setUpdateCheckInterval,
-  setDefaultIde,
-  setDefaultTerminal,
-  setRepoSetupCommands,
-  setIssueTracker,
-  setWorktreeBasePath,
+  onApply,
   onDependencyStatusChange,
 }: SettingsModalProps) {
   const [section, setSection] = useState<Section>('general')
+  const [draftConfig, setDraftConfig] = useState<AppConfig | null>(null)
+  const [appliedConfig, setAppliedConfig] = useState<AppConfig | null>(null)
+  const [applying, setApplying] = useState(false)
   const [newRepoName, setNewRepoName] = useState('')
   const [newRepoPath, setNewRepoPath] = useState('')
   const [expandedRepo, setExpandedRepo] = useState<string | null>(null)
@@ -95,6 +90,9 @@ export function SettingsModal({
 
   useEffect(() => {
     if (opened && config) {
+      const nextConfig = cloneConfig(config)
+      setDraftConfig(nextConfig)
+      setAppliedConfig(cloneConfig(nextConfig))
       setBasePathInput(config.worktreeBasePath || '~/Developer/worktrees')
       setNewRepoName('')
       setNewRepoPath('')
@@ -109,34 +107,92 @@ export function SettingsModal({
     }
   }, [opened, section])
 
-  if (!opened || !config) return null
+  if (!opened || !config || !draftConfig || !appliedConfig) return null
 
-  async function checkDependencies() {
-    setCheckingDeps(true)
+  const hasChanges = JSON.stringify(draftConfig) !== JSON.stringify(appliedConfig)
+
+  function updateDraft(update: (current: AppConfig) => AppConfig) {
+    setDraftConfig((current) => current ? update(current) : current)
+  }
+
+  async function handleApply() {
+    if (!draftConfig || !hasChanges || applying) return
+    const configToApply = draftConfig
+    setApplying(true)
     try {
-      const status = await rpc().request['system:dependencies']({ refresh: true })
-      setDepStatus(status)
-      onDependencyStatusChange?.(status)
-    } catch {
-      setDepStatus(null)
+      await onApply(configToApply)
+      setAppliedConfig(cloneConfig(configToApply))
     } finally {
-      setCheckingDeps(false)
+      setApplying(false)
     }
   }
 
   async function handleAddRepo() {
     if (!newRepoName.trim() || !newRepoPath.trim()) return
-    await addRepo(newRepoName.trim(), newRepoPath.trim())
+    const newRepo: RepoConfig = {
+      id: crypto.randomUUID(),
+      name: newRepoName.trim(),
+      path: newRepoPath.trim(),
+    }
+    updateDraft((current) => ({ ...current, repositories: [...current.repositories, newRepo] }))
     setNewRepoName('')
     setNewRepoPath('')
+  }
+
+  async function handleRemoveRepo(id: string) {
+    updateDraft((current) => ({
+      ...current,
+      repositories: current.repositories.filter((repo) => repo.id !== id),
+    }))
+  }
+
+  async function handleSetPollInterval(sec: number) {
+    updateDraft((current) => ({ ...current, pollIntervalSec: sec }))
+  }
+
+  async function handleSetFetchInterval(sec: number) {
+    updateDraft((current) => ({ ...current, fetchIntervalSec: sec }))
+  }
+
+  async function handleSetAutoUpdateEnabled(enabled: boolean) {
+    updateDraft((current) => ({ ...current, autoUpdateEnabled: enabled }))
+  }
+
+  async function handleSetUpdateCheckInterval(minutes: number) {
+    updateDraft((current) => ({ ...current, updateCheckIntervalMin: minutes }))
+  }
+
+  async function handleSetDefaultIde(ide: IdeId) {
+    updateDraft((current) => ({ ...current, defaultIde: ide }))
+  }
+
+  async function handleSetDefaultTerminal(terminal: TerminalId) {
+    updateDraft((current) => ({ ...current, defaultTerminal: terminal }))
+  }
+
+  async function handleSetIssueTracker(tracker: IssueTracker) {
+    updateDraft((current) => ({ ...current, issueTracker: tracker }))
+  }
+
+  async function handleSetBasePath(path: string) {
+    setBasePathInput(path)
+    updateDraft((current) => ({ ...current, worktreeBasePath: path }))
+  }
+
+  async function handleSetRepoSetupCommands(repoId: string, commands: string[]) {
+    updateDraft((current) => ({
+      ...current,
+      repositories: current.repositories.map((repo) =>
+        repo.id === repoId ? { ...repo, setupCommands: commands.length ? commands : undefined } : repo
+      ),
+    }))
   }
 
   async function handleBrowseBasePath() {
     try {
       const result = await rpc().request['dialog:openDirectory']({})
       if (result) {
-        setBasePathInput(result)
-        await setWorktreeBasePath(result)
+        await handleSetBasePath(result)
       }
     } catch {
       // Dialog cancelled or unavailable
@@ -161,7 +217,7 @@ export function SettingsModal({
 
   async function handleSaveBasePath() {
     if (basePathInput.trim()) {
-      await setWorktreeBasePath(basePathInput.trim())
+      await handleSetBasePath(basePathInput.trim())
     }
   }
 
@@ -179,8 +235,21 @@ export function SettingsModal({
       .split('\n')
       .map((c) => c.trim())
       .filter(Boolean)
-    await setRepoSetupCommands(repoId, cmds)
+    await handleSetRepoSetupCommands(repoId, cmds)
     setExpandedRepo(null)
+  }
+
+  async function checkDependencies() {
+    setCheckingDeps(true)
+    try {
+      const status = await rpc().request['system:dependencies']({ refresh: true })
+      setDepStatus(status)
+      onDependencyStatusChange?.(status)
+    } catch {
+      setDepStatus(null)
+    } finally {
+      setCheckingDeps(false)
+    }
   }
 
   async function handleCheckUpdate() {
@@ -203,11 +272,8 @@ export function SettingsModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center" onClick={onClose}>
-      <div
-        className="bg-card rounded-lg border shadow-lg max-w-2xl w-full mx-4 max-h-[80vh] flex overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+      <div className="bg-card rounded-lg border shadow-lg max-w-2xl w-full mx-4 max-h-[80vh] flex overflow-hidden">
         {/* Sidebar */}
         <nav className="w-40 shrink-0 border-r py-3 flex flex-col gap-0.5">
           {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
@@ -228,58 +294,76 @@ export function SettingsModal({
         </nav>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
-          {section === 'general' && (
-            <GeneralSection
-              config={config}
-              newRepoName={newRepoName}
-              setNewRepoName={setNewRepoName}
-              newRepoPath={newRepoPath}
-              setNewRepoPath={setNewRepoPath}
-              onAddRepo={handleAddRepo}
-              onRemoveRepo={removeRepo}
-              expandedRepo={expandedRepo}
-              editingCommands={editingCommands}
-              setEditingCommands={setEditingCommands}
-              onToggleExpand={toggleRepoExpand}
-              onSaveCommands={handleSaveCommands}
-              basePathInput={basePathInput}
-              setBasePathInput={setBasePathInput}
-              onBrowseBasePath={handleBrowseBasePath}
-              onBrowseRepoPath={handleBrowseRepoPath}
-              onSaveBasePath={handleSaveBasePath}
-              onSetIssueTracker={setIssueTracker}
-              onSetPollInterval={setPollInterval}
-              onSetFetchInterval={setFetchInterval}
-            />
-          )}
+        <div className="flex-1 min-w-0 flex flex-col min-h-0">
+          <div className="flex-1 overflow-auto p-6">
+            {section === 'general' && (
+              <GeneralSection
+                config={draftConfig}
+                newRepoName={newRepoName}
+                setNewRepoName={setNewRepoName}
+                newRepoPath={newRepoPath}
+                setNewRepoPath={setNewRepoPath}
+                onAddRepo={handleAddRepo}
+                onRemoveRepo={handleRemoveRepo}
+                expandedRepo={expandedRepo}
+                editingCommands={editingCommands}
+                setEditingCommands={setEditingCommands}
+                onToggleExpand={toggleRepoExpand}
+                onSaveCommands={handleSaveCommands}
+                basePathInput={basePathInput}
+                setBasePathInput={handleSetBasePath}
+                onBrowseBasePath={handleBrowseBasePath}
+                onBrowseRepoPath={handleBrowseRepoPath}
+                onSaveBasePath={handleSaveBasePath}
+                onSetIssueTracker={handleSetIssueTracker}
+                onSetPollInterval={handleSetPollInterval}
+                onSetFetchInterval={handleSetFetchInterval}
+              />
+            )}
 
-          {section === 'editor' && (
-            <EditorSection config={config} onSetDefaultIde={setDefaultIde} />
-          )}
+            {section === 'editor' && (
+              <EditorSection config={draftConfig} onSetDefaultIde={handleSetDefaultIde} />
+            )}
 
-          {section === 'terminal' && (
-            <TerminalSection config={config} onSetDefaultTerminal={setDefaultTerminal} />
-          )}
+            {section === 'terminal' && (
+              <TerminalSection config={draftConfig} onSetDefaultTerminal={handleSetDefaultTerminal} />
+            )}
 
-          {section === 'updates' && (
-            <UpdatesSection
-              config={config}
-              onSetAutoUpdate={setAutoUpdateEnabled}
-              onSetCheckInterval={setUpdateCheckInterval}
-              onCheckUpdate={handleCheckUpdate}
-              checkingUpdates={checkingUpdates}
-              updateResult={updateResult}
-            />
-          )}
+            {section === 'updates' && (
+              <UpdatesSection
+                config={draftConfig}
+                onSetAutoUpdate={handleSetAutoUpdateEnabled}
+                onSetCheckInterval={handleSetUpdateCheckInterval}
+                onCheckUpdate={handleCheckUpdate}
+                checkingUpdates={checkingUpdates}
+                updateResult={updateResult}
+              />
+            )}
 
-          {section === 'dependencies' && (
-            <DependenciesSection
-              depStatus={depStatus}
-              checkingDeps={checkingDeps}
-              onRecheck={checkDependencies}
-            />
-          )}
+            {section === 'dependencies' && (
+              <DependenciesSection
+                depStatus={depStatus}
+                checkingDeps={checkingDeps}
+                onRecheck={checkDependencies}
+              />
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 border-t px-6 py-3 shrink-0">
+            <button
+              className="px-4 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              onClick={onClose}
+            >
+              Close
+            </button>
+            <button
+              className="px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleApply}
+              disabled={!hasChanges || applying}
+            >
+              {applying ? 'Applying...' : 'Apply'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -29,11 +29,8 @@ const INSTALL_URLS: Record<string, string> = {
 
 export default function App() {
   const {
-    config, loading,
-    addRepo, removeRepo, setPollInterval, setAutoUpdateEnabled,
-    setUpdateCheckInterval, reorderRepos, setDefaultIde,
-    setDefaultTerminal, setRepoSetupCommands, setIssuePanelOpen, setIssuePanelWidth,
-    setWorktreeBasePath, setIssueTracker, setFetchInterval,
+    config, loading, save,
+    reorderRepos, setIssuePanelOpen, setIssuePanelWidth,
     setDismissedDependencyWarning, setZoomLevel, toggleNotReady
   } = useConfig()
   const [settingsOpened, setSettingsOpened] = useState(false)
@@ -335,18 +332,8 @@ export default function App() {
         opened={settingsOpened}
         onClose={() => setSettingsOpened(false)}
         config={config}
+        onApply={save}
         onDependencyStatusChange={setDependencyStatus}
-        addRepo={addRepo}
-        removeRepo={removeRepo}
-        setPollInterval={setPollInterval}
-        setFetchInterval={setFetchInterval}
-        setAutoUpdateEnabled={setAutoUpdateEnabled}
-        setUpdateCheckInterval={setUpdateCheckInterval}
-        setDefaultIde={setDefaultIde}
-        setDefaultTerminal={setDefaultTerminal}
-        setRepoSetupCommands={setRepoSetupCommands}
-        setWorktreeBasePath={setWorktreeBasePath}
-        setIssueTracker={setIssueTracker}
       />
 
       <DragOverlay dropAnimation={null}>
