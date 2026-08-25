@@ -32,6 +32,6 @@ export default {
     watchIgnore: ['dist/**']
   },
   release: {
-    baseUrl: 'https://github.com/alexprudhomme/mossy/releases/latest/download'
+    baseUrl: 'https://github.com/coveooss/mossy/releases/latest/download'
   }
 } satisfies ElectrobunConfig
